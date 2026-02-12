@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(for i in {2..8})",
+      "Bash(do cp project-1.html project-$i.html)",
+      "Bash(done)",
+      "Bash(python3 -m http.server:*)",
+      "Bash(lsof:*)",
+      "Bash(curl:*)",
+      "Bash(xargs kill:*)",
+      "Bash(node -e:*)"
+    ]
+  }
+}
