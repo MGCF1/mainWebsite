@@ -10,7 +10,7 @@
         .nyb-scroll-hero {
             position: relative;
             margin-top: var(--nav-height);
-            height: 440vh;
+            height: 620vh;
         }
 
         .nyb-scroll-stage {
@@ -121,7 +121,7 @@
             transform: translate(var(--nyb-copy-x, 200px), -50%);
             pointer-events: none;
             text-align: left;
-            width: min(calc(48vw - 80px), 380px);
+            width: min(calc(34vw - 60px), 300px);
             display: flex;
             flex-direction: column;
             align-items: flex-start;
@@ -133,6 +133,16 @@
             height: 72px;
             border-radius: 18px;
             margin-bottom: 20px;
+            opacity: var(--nyb-copy-t0, 0);
+            transform: translateY(calc(12px * (1 - var(--nyb-copy-t0, 0))));
+            will-change: opacity, transform;
+        }
+
+        .nyb-copy-emoji {
+            font-size: 64px;
+            line-height: 1;
+            margin-bottom: 20px;
+            display: none;
             opacity: var(--nyb-copy-t0, 0);
             transform: translateY(calc(12px * (1 - var(--nyb-copy-t0, 0))));
             will-change: opacity, transform;
@@ -164,38 +174,82 @@
             will-change: opacity, transform;
         }
 
-        /* Flipped-state text panel — mirrors .nyb-copy but right-aligned, left of phone */
-        .nyb-flipped-copy {
+        .nyb-copy-list {
+            list-style: none;
+            padding: 0;
+            margin: 8px 0 0;
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            opacity: var(--nyb-copy-t2, 0);
+            transform: translateY(calc(12px * (1 - var(--nyb-copy-t2, 0))));
+            will-change: opacity, transform;
+        }
+
+        .nyb-copy-list li {
+            font-size: clamp(16px, 1.8vw, 22px);
+            color: rgba(245,245,247,0.6);
+            line-height: 1.55;
+        }
+
+        /* Feature panel — always sits LEFT of phone (phone is on right) */
+        .nyb-feature-panel {
             position: absolute;
             left: 50%;
             top: calc(50% + var(--nav-height) / 2);
-            transform: translate(var(--nyb-flipped-x, -600px), -50%);
+            transform: translate(var(--nyb-panel-x, -600px), -50%);
             pointer-events: none;
-            text-align: right;
-            width: min(calc(34vw - 60px), 260px);
+            width: min(calc(34vw - 60px), 300px);
             display: flex;
             flex-direction: column;
             align-items: flex-end;
+            text-align: right;
             gap: 0;
+            opacity: var(--nyb-flipped-t, 0);
         }
 
-        .nyb-flipped-title {
-            font-size: clamp(36px, 5vw, 72px);
+        .nyb-panel-emoji {
+            font-size: 64px;
+            line-height: 1;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .nyb-panel-title {
+            font-size: clamp(28px, 3.5vw, 56px);
             line-height: 0.96;
             letter-spacing: -0.015em;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             color: #f5f5f7;
-            opacity: var(--nyb-flipped-t, 0);
-            transform: translateY(calc(12px * (1 - var(--nyb-flipped-t, 0))));
-            will-change: opacity, transform;
         }
 
-        .nyb-flipped-caption {
-            font-size: clamp(16px, 1.8vw, 22px);
+        .nyb-panel-body {
+            font-size: clamp(14px, 1.4vw, 18px);
             color: rgba(245,245,247,0.6);
-            opacity: var(--nyb-flipped-t, 0);
-            transform: translateY(calc(12px * (1 - var(--nyb-flipped-t, 0))));
-            will-change: opacity, transform;
+            line-height: 1.55;
+            margin: 0;
+        }
+
+        .nyb-panel-list {
+            list-style: none;
+            padding: 0;
+            margin: 8px 0 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nyb-panel-list li {
+            font-size: clamp(14px, 1.4vw, 18px);
+            color: rgba(245,245,247,0.7);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nyb-check {
+            color: #4facfe;
+            font-weight: 700;
         }
 
         @media (max-width: 768px) {
@@ -215,14 +269,13 @@
                 width: 90vw;
             }
 
-            /* Flipped copy: same position below the phone, centred */
-            .nyb-flipped-copy {
-                display: flex;
-                top: calc(var(--nav-height) + 30px + var(--nyb-unit-h) + 20px);
-                left: 50%;
-                transform: translateX(-50%);
-                text-align: center;
-                align-items: center;
+            /* Feature panel: below phone, centred */
+            .nyb-feature-panel {
+                top: calc(var(--nav-height) + 30px + var(--nyb-unit-h) + 20px) !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                text-align: center !important;
+                align-items: center !important;
                 width: 90vw;
             }
 
@@ -240,7 +293,7 @@
             }
 
             .nyb-scroll-hero {
-                height: 380vh;
+                height: 540vh;
             }
         }
 
@@ -282,16 +335,20 @@
 
                 <div class="nyb-copy">
                     <img class="nyb-copy-icon" src="../images/Icons/NYBiker_Icon.png" alt="NYBiker app icon">
+                    <span class="nyb-copy-emoji"></span>
                     <h1 class="nyb-title">NYBiker</h1>
                     <p class="nyb-tagline">Find &amp; plan your perfect ride</p>
+                    <ul class="nyb-copy-list"></ul>
                     <div class="project-links">
                         <a href="https://apps.apple.com/us/app/nybiker/id6740424241" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Download on App Store</a>
                     </div>
                 </div>
 
-                <div class="nyb-flipped-copy">
-                    <h2 class="nyb-flipped-title">Station Details</h2>
-                    <p class="nyb-flipped-caption">EBike Charges, Walking Directions, and station Street level Views all visible at a glance</p>
+                <div class="nyb-feature-panel">
+                    <span class="nyb-panel-emoji"></span>
+                    <h2 class="nyb-panel-title">Station Details</h2>
+                    <p class="nyb-panel-body">EBike charges, walking directions, and station street-level views all visible at a glance.</p>
+                    <ul class="nyb-panel-list" style="display:none"></ul>
                 </div>
             </div>
         </div>
@@ -385,55 +442,260 @@
             const hero = document.getElementById('nybScrollHero');
             if (!hero) return;
 
-            const clamp    = (v, a, b) => Math.min(b, Math.max(a, v));
-            const easeOut  = t => 1 - Math.pow(1 - t, 3);
-            // Cubic ease-in-out: slow start, fast middle, slow end
-            const easeIO   = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+            const clamp   = (v, a, b) => Math.min(b, Math.max(a, v));
+            const easeOut = t => 1 - Math.pow(1 - t, 3);
+            const easeIO  = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+
+            // ── Virtual scroll ────────────────────────────────────────────────
+            // vScroll is the single source of truth — the browser scroll position
+            // is just kept in sync as a side-effect. All input (wheel, touch,
+            // keyboard) feeds vScroll directly, which lets us freeze it exactly
+            // during animations so fast momentum can never skip a section.
+            let vScroll    = 0;
+            let heroAbsTop = 0; // hero's top in document coordinates (cached)
+
+            function getTotal() { return Math.max(0, hero.offsetHeight - window.innerHeight); }
+
+            function cacheHeroAbsTop() {
+                heroAbsTop = hero.getBoundingClientRect().top + window.scrollY;
+            }
+
+            // Keep the browser's scroll bar in sync with vScroll.
+            function syncBrowserScroll() {
+                window.scrollTo({ top: heroAbsTop + vScroll, behavior: 'instant' });
+            }
+
+            // Normalize wheel deltaY across deltaMode values (px / line / page).
+            function normaliseDelta(e) {
+                if (e.deltaMode === 1) return e.deltaY * 20;  // lines → px
+                if (e.deltaMode === 2) return e.deltaY * window.innerHeight; // pages → px
+                return e.deltaY;
+            }
+
+            // Apply a signed pixel delta to vScroll, staying within [0, total].
+            // At the edges, pass-through to the browser (content above/below hero).
+            function applyDelta(delta) {
+                if (state === 'animating') return; // discard all input during flip
+                const total    = getTotal();
+                const atBottom = vScroll >= total;
+                const atTop    = vScroll <= 0;
+                if ((atBottom && delta > 0) || (atTop && delta < 0)) return; // pass-through
+                const prev = vScroll;
+                vScroll = clamp(vScroll + delta, 0, total);
+                if (vScroll !== prev) { syncBrowserScroll(); updateHero(); }
+            }
+
+            // ── Input handlers ────────────────────────────────────────────────
+            // Sync vScroll from the browser's actual position before we take over.
+            // This prevents a jump when the user naturally scrolls into the hero zone
+            // (browser may be at heroAbsTop+N while vScroll is still 0).
+            function syncVScrollFromBrowser() {
+                vScroll = clamp(window.scrollY - heroAbsTop, 0, getTotal());
+            }
+
+            function onWheel(e) {
+                // Haven't reached the hero yet — let the browser scroll naturally.
+                if (window.scrollY < heroAbsTop) return;
+                // Align vScroll with wherever the browser currently sits so the
+                // first hijacked event never causes a positional jump.
+                syncVScrollFromBrowser();
+                const total    = getTotal();
+                const atBottom = vScroll >= total;
+                const atTop    = vScroll <= 0;
+                if ((atBottom && e.deltaY > 0) || (atTop && e.deltaY < 0)) return;
+                e.preventDefault();
+                applyDelta(normaliseDelta(e));
+            }
+
+            let touchStartY = 0;
+            function onTouchStart(e) {
+                touchStartY = e.touches[0].clientY;
+                if (window.scrollY >= heroAbsTop) syncVScrollFromBrowser();
+            }
+            function onTouchMove(e) {
+                if (window.scrollY < heroAbsTop) return;
+                const total    = getTotal();
+                const dy       = touchStartY - e.touches[0].clientY; // +ve = down
+                touchStartY    = e.touches[0].clientY;
+                const atBottom = vScroll >= total;
+                const atTop    = vScroll <= 0;
+                if ((atBottom && dy > 0) || (atTop && dy < 0)) return;
+                e.preventDefault();
+                applyDelta(dy * 1.5);
+            }
+
+            function onKeyDown(e) {
+                const total = getTotal();
+                if (vScroll < 0 || vScroll > total) return; // hero not active
+                const sm = total * 0.025;
+                const lg = total * 0.06;
+                let delta = 0;
+                if      (e.key === 'ArrowDown')               delta =  sm;
+                else if (e.key === 'ArrowUp')                 delta = -sm;
+                else if (e.key === 'PageDown' || e.key === ' ') delta =  lg;
+                else if (e.key === 'PageUp')                  delta = -lg;
+                else return;
+                e.preventDefault();
+                applyDelta(delta);
+            }
+
+            window.addEventListener('wheel',      onWheel,      { passive: false });
+            window.addEventListener('touchstart', onTouchStart, { passive: true  });
+            window.addEventListener('touchmove',  onTouchMove,  { passive: false });
+            window.addEventListener('keydown',    onKeyDown);
+
+            // ─────────────────────────────────────────────────────────────────
 
             function mapRange(v, a, b) {
                 if (b === a) return 0;
                 return clamp((v - a) / (b - a), 0, 1);
             }
 
-            // ── Scroll thresholds ────────────────────────────────────────────
-            // Right fires when scrolling DOWN past 0.65.
-            // Left  fires when scrolling UP   past 0.60 (higher on page = smaller progress).
-            // The 0.05 gap prevents accidental re-triggering.
-            const TRIGGER_RIGHT = 0.84;
-            const TRIGGER_LEFT  = 0.78;
-            const FLIP_MS       = 620; // animation duration
+            // ── Feature sections ─────────────────────────────────────────────
+            // side: 'left'  → text panel on left,  phone on right (.nyb-feature-panel)
+            // side: 'right' → text panel on right, phone on left  (.nyb-copy)
+            // bikeLtr: bike sweeps L→R when entering this section; reversed on exit
+            const SECTIONS = [
+                {
+                    title:   'Station Details',
+                    body:    'EBike charges, walking directions, and station street-level views all visible at a glance.',
+                    items:   null,
+                    side:    'left',
+                    bikeLtr: true,
+                    screen:  'station',
+                    emoji:   '📍',
+                },
+                {
+                    title:   'Advanced Filters',
+                    body:    'Tune bike filters to only see the bike types you want, and even filter out low powered EBikes.',
+                    items:   null,
+                    side:    'right',
+                    bikeLtr: false,
+                    screen:  'map',
+                    emoji:   '🎛️',
+                },
+                {
+                    title:   'Going Somewhere?',
+                    body:    'Search a destination and find the best stations for your trip — start-to-finish bike directions in seconds.',
+                    items:   null,
+                    side:    'left',
+                    bikeLtr: true,
+                    screen:  'map',
+                    emoji:   '🧭',
+                },
+                {
+                    title:   'Free',
+                    body:    null,
+                    items:   ['No ads', 'No subscriptions', 'No tracking'],
+                    side:    'right',
+                    bikeLtr: false,
+                    screen:  'map',
+                    emoji:   '🎉',
+                },
+            ];
+
+            const INTRO_TITLE   = 'NYBiker';
+            const INTRO_TAGLINE = 'Find\u00A0& plan your perfect ride';
+
+            // TRIGGERS[i] = forward scroll progress that activates section i
+            // TRIGGERS_BK[i] = backward scroll progress that deactivates section i
+            const TRIGGERS    = [0.43, 0.56, 0.67, 0.76];
+            const TRIGGERS_BK = [0.39, 0.52, 0.63, 0.72];
+            const FLIP_MS     = 620;
 
             // ── State ────────────────────────────────────────────────────────
-            // 'neutral'   phone is left, text visible — scroll drives everything
-            // 'animating' flip in progress (blocks new triggers)
-            // 'flipped'   phone is right, text hidden
-            // 'restored'  left-flip done; P3 pinned until scroll re-enters stable zone
-            let state        = 'neutral';
+            // activeSec: -1 = intro, 0..N-1 = feature section index
+            let activeSec    = -1;
+            let state        = 'scroll'; // 'scroll' | 'animating' | 'pinned' | 'restored'
             let prevProgress = 0;
             let animRafId    = null;
             let animStartTs  = null;
-            let animDir      = null; // 'right' | 'left'
-            let imgSwapped   = false; // tracks mid-flip screen image swap
+            let animFwd      = true;
+            let animBikeLtr  = true; // true = bike sweeps L→R for this flip
+            let imgSwapped   = false;
 
-            // Captured at PhoneFlipRight trigger time
+            // Snapped at the moment each flip fires
             let snapShiftX     = 0;
+            let snapBezelW     = 0;
             let snapTextPanelX = 0;
-            let snapTextPanelW = 0;
             let snapCopyT0     = 1;
             let snapCopyT1     = 1;
             let snapCopyT2     = 1;
 
-            // ── Scroll lock ──────────────────────────────────────────────────
-            function preventScroll(e) { e.preventDefault(); }
+            // ── DOM refs ─────────────────────────────────────────────────────
+            // Left panel (.nyb-feature-panel) — side:'left' sections
+            const panel      = hero.querySelector('.nyb-feature-panel');
+            const panelEmoji = panel.querySelector('.nyb-panel-emoji');
+            const panelTitle = panel.querySelector('.nyb-panel-title');
+            const panelBody  = panel.querySelector('.nyb-panel-body');
+            const panelList  = panel.querySelector('.nyb-panel-list');
+            // Right panel (.nyb-copy) — intro + side:'right' sections
+            const copyEl      = hero.querySelector('.nyb-copy');
+            const copyIcon    = copyEl.querySelector('.nyb-copy-icon');
+            const copyEmoji   = copyEl.querySelector('.nyb-copy-emoji');
+            const copyTitle   = copyEl.querySelector('.nyb-title');
+            const copyTagline = copyEl.querySelector('.nyb-tagline');
+            const copyList    = copyEl.querySelector('.nyb-copy-list');
+            const copyLinks   = copyEl.querySelector('.project-links');
 
-            function lockScroll() {
-                window.addEventListener('wheel',     preventScroll, { passive: false });
-                window.addEventListener('touchmove', preventScroll, { passive: false });
+
+            // ── Panel helpers ────────────────────────────────────────────────
+            function getPhoneDx(sec) {
+                if (sec < 0) return -snapShiftX;
+                return SECTIONS[sec].side === 'left' ? snapShiftX : -snapShiftX;
             }
 
-            function unlockScroll() {
-                window.removeEventListener('wheel',     preventScroll);
-                window.removeEventListener('touchmove', preventScroll);
+            function applyLeftPanelX() {
+                if (window.innerWidth <= 768) return;
+                const panelW = Math.min(window.innerWidth * 0.34 - 60, 300);
+                hero.style.setProperty('--nyb-panel-x',
+                    `${(snapShiftX - snapBezelW / 2 - 44 - panelW).toFixed(1)}px`);
+            }
+
+            // Apply section content to its panel; hide the opposite panel's elements.
+            // sec = -1  → restore intro on the right panel
+            // sec >= 0  → side:'left'  populates .nyb-feature-panel (left)
+            //             side:'right' populates .nyb-copy          (right)
+            function applySection(sec) {
+                const makeItems = items => items
+                    .map(i => `<li>${i}</li>`)
+                    .join('');
+
+                if (sec < 0) {
+                    // Intro: right panel shows app icon, title, tagline, CTA
+                    copyIcon.style.display    = '';
+                    copyEmoji.style.display   = 'none';
+                    copyTitle.textContent     = INTRO_TITLE;
+                    copyTagline.textContent   = INTRO_TAGLINE;
+                    copyTagline.style.display = '';
+                    copyList.style.display    = 'none';
+                    copyLinks.style.display   = '';
+                    return;
+                }
+
+                const s = SECTIONS[sec];
+                if (s.side === 'left') {
+                    // Left panel (.nyb-feature-panel): emoji + title + body/items right-aligned
+                    panelEmoji.style.display = s.emoji ? 'block' : 'none';
+                    panelEmoji.textContent   = s.emoji || '';
+                    panelTitle.textContent   = s.title;
+                    panelBody.style.display  = s.body  ? '' : 'none';
+                    if (s.body)  panelBody.textContent = s.body;
+                    panelList.style.display = s.items ? '' : 'none';
+                    if (s.items) panelList.innerHTML = makeItems(s.items);
+                    applyLeftPanelX();
+                } else {
+                    // Right panel (.nyb-copy): emoji replaces icon, body replaces tagline, no CTA
+                    copyIcon.style.display    = 'none';
+                    copyEmoji.style.display   = s.emoji ? 'block' : 'none';
+                    copyEmoji.textContent     = s.emoji || '';
+                    copyTitle.textContent     = s.title;
+                    copyTagline.style.display = s.body  ? '' : 'none';
+                    if (s.body)  copyTagline.textContent = s.body;
+                    copyList.style.display    = s.items ? 'flex' : 'none';
+                    if (s.items) copyList.innerHTML = makeItems(s.items);
+                    copyLinks.style.display   = 'none';
+                }
             }
 
             // ── Animation tick ───────────────────────────────────────────────
@@ -442,117 +704,128 @@
                 const t  = Math.min((ts - animStartTs) / FLIP_MS, 1);
                 const et = easeIO(t);
 
-                const vw          = window.innerWidth;
-                const isMobile    = vw <= 768;
-                const phoneTarget = isMobile ? 0 : snapShiftX;
+                const vw       = window.innerWidth;
+                const isMobile = vw <= 768;
+                const fromSec  = activeSec;
+                const toSec    = animFwd ? activeSec + 1 : activeSec - 1;
 
-                let bikeX, phoneRotY, phoneDx, bikeOpacity, bikeScaleX, textAlpha;
+                const fromDx = isMobile ? 0 : getPhoneDx(fromSec);
+                const toDx   = isMobile ? 0 : getPhoneDx(toSec);
+                const curDx  = fromDx + (toDx - fromDx) * et;
 
-                if (animDir === 'right') {
-                    // Bike sweeps L→R, phone spins forward, text fades out
-                    bikeX       = -vw * 0.9 + vw * 1.8 * et;
-                    phoneRotY   = et * -360;
-                    phoneDx     = -snapShiftX + (phoneTarget + snapShiftX) * et;
-                    bikeScaleX  = 1;
-                    bikeOpacity = t < 0.97 ? 1 : 0;
-                    textAlpha   = 1 - et;
-                } else {
-                    // Bike sweeps R→L (flipped), phone spins back, text fades in
-                    bikeX       = vw * 0.9 - vw * 1.8 * et;
-                    phoneRotY   = -360 + et * 360;
-                    phoneDx     = phoneTarget + (-snapShiftX - phoneTarget) * et;
-                    bikeScaleX  = -1;
-                    bikeOpacity = t < 0.97 ? 1 : 0;
-                    textAlpha   = et;
-                }
+                const bikeX      = animBikeLtr
+                    ? -vw * 0.9 + vw * 1.8 * et
+                    :  vw * 0.9 - vw * 1.8 * et;
+                const bikeScaleX = animBikeLtr ? 1 : -1;
+                const bikeOpacity = t < 0.97 ? 1 : 0;
+                const rotDir      = toDx >= fromDx ? -1 : 1; // spin direction matches travel direction
+                const phoneRotY   = rotDir * 360 * et;
 
-                hero.style.setProperty('--nyb-unit-dx',      `${phoneDx.toFixed(1)}px`);
-                hero.style.setProperty('--nyb-copy-t0',      (snapCopyT0 * textAlpha).toFixed(4));
-                hero.style.setProperty('--nyb-copy-t1',      (snapCopyT1 * textAlpha).toFixed(4));
-                hero.style.setProperty('--nyb-copy-t2',      (snapCopyT2 * textAlpha).toFixed(4));
-                hero.style.setProperty('--nyb-bike-x',       `${bikeX.toFixed(1)}px`);
-                hero.style.setProperty('--nyb-bike-scalex',  String(bikeScaleX));
-                hero.style.setProperty('--nyb-bike-opacity', String(bikeOpacity));
-                hero.style.setProperty('--nyb-phone-roty',   `${phoneRotY.toFixed(1)}deg`);
+                // ── Two-panel alpha ───────────────────────────────────────────
+                // Left panel  (.nyb-feature-panel): side:'left'  → --nyb-flipped-t
+                // Right panel (.nyb-copy):           intro + side:'right' → --nyb-copy-t0/1/2
+                const fromUseLeft = fromSec >= 0 && SECTIONS[fromSec].side === 'left';
+                const toUseLeft   = toSec   >= 0 && SECTIONS[toSec].side   === 'left';
+                const fadeOut = t < 0.5 ? 1 - easeIO(t * 2) : 0;
+                const fadeIn  = t < 0.5 ? 0 : easeIO((t - 0.5) * 2);
 
-                // Flipped-state text panel fades in on right flip, out on left flip
-                const flippedAlpha = animDir === 'right' ? et : (1 - et);
-                hero.style.setProperty('--nyb-flipped-t', flippedAlpha.toFixed(4));
+                const leftAlpha  = (fromUseLeft ? fadeOut : 0) + (toUseLeft ? fadeIn : 0);
+                // Intro right panel fades proportional to its snap value; feature sections fade 0→1
+                const rightAlpha = (!fromUseLeft ? fadeOut * (fromSec < 0 ? snapCopyT0 : 1) : 0)
+                                 + (!toUseLeft   ? fadeIn  * (toSec   < 0 ? snapCopyT0 : 1) : 0);
 
-                // Swap screen image at midpoint — back face is fully visible at t=0.5
-                // so the swap is completely hidden from the user.
+                hero.style.setProperty('--nyb-unit-dx',      `${curDx.toFixed(1)}px`);
+                hero.style.setProperty('--nyb-phone-roty',    `${phoneRotY.toFixed(1)}deg`);
+                hero.style.setProperty('--nyb-bike-x',        `${bikeX.toFixed(1)}px`);
+                hero.style.setProperty('--nyb-bike-scalex',   String(bikeScaleX));
+                hero.style.setProperty('--nyb-bike-opacity',  String(bikeOpacity));
+                hero.style.setProperty('--nyb-flipped-t',     leftAlpha.toFixed(4));
+                hero.style.setProperty('--nyb-copy-t0',       rightAlpha.toFixed(4));
+                hero.style.setProperty('--nyb-copy-t1',       rightAlpha.toFixed(4));
+                hero.style.setProperty('--nyb-copy-t2',       rightAlpha.toFixed(4));
+
+                // Midpoint: swap screen image + apply destination section content
+                // (phone back-face is showing so this is hidden from the user)
                 if (!imgSwapped && t >= 0.5) {
                     imgSwapped = true;
-                    const mapImg     = hero.querySelector('.nyb-screen-map');
-                    const stationImg = hero.querySelector('.nyb-screen-station');
-                    if (animDir === 'right') {
-                        mapImg.style.opacity     = '0';
-                        stationImg.style.opacity = '1';
-                    } else {
-                        mapImg.style.opacity     = '1';
-                        stationImg.style.opacity = '0';
+                    const showStation = toSec >= 0 && SECTIONS[toSec].screen === 'station';
+                    hero.querySelector('.nyb-screen-map').style.opacity     = showStation ? '0' : '1';
+                    hero.querySelector('.nyb-screen-station').style.opacity = showStation ? '1' : '0';
+                    applySection(toSec);
+                }
+
+                if (t < 1) { animRafId = requestAnimationFrame(tickFlip); return; }
+
+                // ── Settle ───────────────────────────────────────────────────
+                animRafId = null;
+                hero.style.setProperty('--nyb-bike-opacity', '0');
+                hero.style.setProperty('--nyb-phone-roty',   '0deg');
+
+                // settlePanel: pin the correct panel at full opacity, hide the other
+                function settlePanel(sec) {
+                    const useLeft = sec >= 0 && SECTIONS[sec].side === 'left';
+                    hero.style.setProperty('--nyb-flipped-t', useLeft ? '1' : '0');
+                    hero.style.setProperty('--nyb-copy-t0',   useLeft ? '0' : '1');
+                    hero.style.setProperty('--nyb-copy-t1',   useLeft ? '0' : '1');
+                    hero.style.setProperty('--nyb-copy-t2',   useLeft ? '0' : '1');
+                    if (!useLeft && sec >= 0) {
+                        // keep right panel anchored at snap position
+                        hero.style.setProperty('--nyb-copy-x', `${snapTextPanelX.toFixed(1)}px`);
                     }
                 }
 
-                if (t < 1) {
-                    animRafId = requestAnimationFrame(tickFlip);
-                    return;
-                }
-
-                // ── Settle to final state ────────────────────────────────────
-                animRafId = null;
-                unlockScroll();
-                hero.style.setProperty('--nyb-bike-opacity', '0');
-
-                if (animDir === 'right') {
-                    state = 'flipped';
-                    hero.style.setProperty('--nyb-unit-dx',    `${phoneTarget.toFixed(1)}px`);
-                    hero.style.setProperty('--nyb-copy-t0',    '0');
-                    hero.style.setProperty('--nyb-copy-t1',    '0');
-                    hero.style.setProperty('--nyb-copy-t2',    '0');
-                    hero.style.setProperty('--nyb-phone-roty', '-360deg');
-                    hero.style.setProperty('--nyb-flipped-t',  '1');
+                if (animFwd) {
+                    activeSec++;
+                    state = 'pinned';
+                    hero.style.setProperty('--nyb-unit-dx', `${(isMobile ? 0 : getPhoneDx(activeSec)).toFixed(1)}px`);
+                    settlePanel(activeSec);
                 } else {
-                    state = 'restored';
-                    hero.style.setProperty('--nyb-unit-dx',    `${(-snapShiftX).toFixed(1)}px`);
-                    hero.style.setProperty('--nyb-copy-x',     `${snapTextPanelX.toFixed(1)}px`);
-                    hero.style.setProperty('--nyb-copy-t0',    snapCopyT0.toFixed(4));
-                    hero.style.setProperty('--nyb-copy-t1',    snapCopyT1.toFixed(4));
-                    hero.style.setProperty('--nyb-copy-t2',    snapCopyT2.toFixed(4));
-                    hero.style.setProperty('--nyb-phone-roty', '0deg');
-                    hero.style.setProperty('--nyb-flipped-t',  '0');
+                    activeSec--;
+                    if (activeSec < 0) {
+                        state = 'restored';
+                        hero.style.setProperty('--nyb-flipped-t', '0');
+                        hero.style.setProperty('--nyb-copy-t0',   snapCopyT0.toFixed(4));
+                        hero.style.setProperty('--nyb-copy-t1',   snapCopyT1.toFixed(4));
+                        hero.style.setProperty('--nyb-copy-t2',   snapCopyT2.toFixed(4));
+                        hero.style.setProperty('--nyb-copy-x',    `${snapTextPanelX.toFixed(1)}px`);
+                        hero.style.setProperty('--nyb-unit-dx',   `${(isMobile ? 0 : -snapShiftX).toFixed(1)}px`);
+                    } else {
+                        state = 'pinned';
+                        hero.style.setProperty('--nyb-unit-dx', `${(isMobile ? 0 : getPhoneDx(activeSec)).toFixed(1)}px`);
+                        settlePanel(activeSec);
+                    }
                 }
+
+                // Re-evaluate immediately after settling so chained backward transitions
+                // fire even when the scroll position is static (no scroll events incoming).
+                updateHero();
             }
 
-            // ── Public flip functions ────────────────────────────────────────
-            function PhoneFlipRight() {
-                if (state !== 'neutral') return;
+            // fwd=true  → entering the next section (bike uses that section's bikeLtr)
+            // fwd=false → leaving the current section (bike reverses that section's bikeLtr)
+            function flipPhone(fwd) {
+                const sec   = fwd ? activeSec + 1 : activeSec;
+                animBikeLtr = fwd ? SECTIONS[sec].bikeLtr : !SECTIONS[sec].bikeLtr;
                 state       = 'animating';
-                animDir     = 'right';
+                animFwd     = fwd;
                 animStartTs = null;
                 imgSwapped  = false;
-                lockScroll();
+                // Snap vScroll (and browser scroll) to the exact threshold.
+                // Because applyDelta() returns immediately when state==='animating',
+                // no further input can advance past this point until the flip settles.
+                const p     = fwd ? TRIGGERS[sec] : TRIGGERS_BK[sec];
+                vScroll     = p * getTotal();
+                syncBrowserScroll();
                 animRafId   = requestAnimationFrame(tickFlip);
             }
 
-            function PhoneFlipLeft() {
-                if (state !== 'flipped') return;
-                state       = 'animating';
-                animDir     = 'left';
-                animStartTs = null;
-                imgSwapped  = false;
-                lockScroll();
-                animRafId   = requestAnimationFrame(tickFlip);
-            }
-
-            // ── p1→p3 scroll handler ─────────────────────────────────────────
+            // ── Main update ───────────────────────────────────────────────────
             function updateHero() {
-                const rect     = hero.getBoundingClientRect();
-                const total    = hero.offsetHeight - window.innerHeight;
-                const progress = clamp(total > 0 ? -rect.top / total : 0, 0, 1);
+                const total    = getTotal();
+                const progress = clamp(total > 0 ? vScroll / total : 0, 0, 1);
 
-                const vw = window.innerWidth;
-                const vh = window.innerHeight;
+                const vw       = window.innerWidth;
+                const vh       = window.innerHeight;
                 const isMobile = vw <= 768;
 
                 const phoneW  = isMobile ? Math.min(vw * 0.52, 220) : Math.min(vw * 0.26, 360);
@@ -561,94 +834,94 @@
                 const screenW = bezelW * (1319 / 1470);
                 const screenH = bezelH * (2867 / 3000);
 
-                const frameT = easeOut(mapRange(progress, 0.12, 0.48));
-                const copyT0 = easeOut(mapRange(progress, 0.51, 0.62));
-                const copyT1 = easeOut(mapRange(progress, 0.55, 0.66));
-                const copyT2 = easeOut(mapRange(progress, 0.58, 0.70));
+                const frameT = easeOut(mapRange(progress, 0,    0.26));
+                const copyT0 = easeOut(mapRange(progress, 0.28, 0.38));
+                const copyT1 = easeOut(mapRange(progress, 0.31, 0.41));
+                const copyT2 = easeOut(mapRange(progress, 0.34, 0.44));
 
                 const startScale   = Math.max(vw / screenW, vh / screenH) * 1.25;
                 const unitScale    = startScale + (1 - startScale) * frameT;
                 const screenRadius = (isMobile ? 22 : 36) * frameT;
 
-                const phoneShiftX    = isMobile ? 0 : Math.min(bezelW * 0.48, vw * 0.18) * copyT0;
-                const textPanelX     = -phoneShiftX + bezelW / 2 + 44;
-                const textPanelWidth = isMobile ? vw * 0.9 : Math.min(vw * 0.48 - 80, 380);
+                const phoneShiftX = isMobile ? 0 : Math.min(bezelW * 0.48, vw * 0.18) * copyT0;
+                const textPanelX  = -phoneShiftX + bezelW / 2 + 44;
 
-                // Size vars always update (viewport-only, not progress-dependent)
-                hero.style.setProperty('--nyb-unit-w',        `${bezelW.toFixed(2)}px`);
-                hero.style.setProperty('--nyb-unit-h',        `${bezelH.toFixed(2)}px`);
-                hero.style.setProperty('--nyb-frame-opacity', '1');
-                // Zoom vars frozen while flipping — prevents conflicts with card-flip
-                if (state === 'neutral') {
+                hero.style.setProperty('--nyb-unit-w', `${bezelW.toFixed(2)}px`);
+                hero.style.setProperty('--nyb-unit-h', `${bezelH.toFixed(2)}px`);
+
+                if (state === 'scroll') {
                     hero.style.setProperty('--nyb-unit-scale',    unitScale.toFixed(4));
                     hero.style.setProperty('--nyb-screen-radius', `${screenRadius.toFixed(2)}px`);
                 }
 
-                // Auto-transition restored → neutral:
-                //   scrolling down past TRIGGER_LEFT → back in stable P3 zone, hand off to scroll
-                //   scrolling up → exit immediately; scroll-lock ensures we start at ≈TRIGGER_LEFT
-                //   where copyT0=1 so the hand-off is seamless and zoom-back-in plays normally
-                if (state === 'restored' && (progress >= TRIGGER_LEFT || progress < prevProgress)) {
-                    state = 'neutral';
+                // restored → scroll: when scrolling back up or progress re-enters intro zone
+                if (state === 'restored' && (progress >= TRIGGERS_BK[0] || progress < prevProgress)) {
+                    state = 'scroll';
                 }
 
-                // Threshold crossing — only fires on the frame that crosses
                 const dn = progress > prevProgress;
                 const up = progress < prevProgress;
 
-                if (dn && prevProgress < TRIGGER_RIGHT && progress >= TRIGGER_RIGHT && state === 'neutral') {
-                    // Snap p3 state and fire right flip
-                    snapShiftX     = phoneShiftX;
-                    snapTextPanelX = textPanelX;
-                    snapTextPanelW = textPanelWidth;
-                    snapCopyT0     = copyT0;
-                    snapCopyT1     = copyT1;
-                    snapCopyT2     = copyT2;
-                    // Position flipped panel: mirror of copy panel, left of phone
-                    const flippedPanelWidth = Math.min(vw * 0.34 - 60, 260);
-                    hero.style.setProperty('--nyb-flipped-x',
-                        `${(phoneShiftX - bezelW / 2 - 44 - flippedPanelWidth).toFixed(1)}px`);
-                    PhoneFlipRight();
-                } else if (up && prevProgress > TRIGGER_LEFT && progress <= TRIGGER_LEFT && state === 'flipped') {
-                    PhoneFlipLeft();
+                // Forward trigger: scroll → sec 0, or pinned at sec N → sec N+1.
+                if (dn && (state === 'scroll' || state === 'pinned')) {
+                    const nextSec = activeSec + 1;
+                    if (nextSec < SECTIONS.length &&
+                        prevProgress < TRIGGERS[nextSec] && progress >= TRIGGERS[nextSec]) {
+                        snapShiftX     = phoneShiftX;
+                        snapBezelW     = bezelW;
+                        snapTextPanelX = textPanelX;
+                        snapCopyT0     = copyT0;
+                        snapCopyT1     = copyT1;
+                        snapCopyT2     = copyT2;
+                        flipPhone(true);
+                    }
+                }
+
+                // Backward trigger: fire whenever pinned and progress has dropped below
+                // the section's threshold — no prevProgress dependency so fast scrolling
+                // that blows through multiple zones still works correctly.
+                if (state === 'pinned') {
+                    const curSec = activeSec;
+                    if (curSec >= 0 && progress < TRIGGERS_BK[curSec]) {
+                        snapShiftX     = phoneShiftX;
+                        snapBezelW     = bezelW;
+                        snapTextPanelX = textPanelX;
+                        snapCopyT0     = copyT0;
+                        snapCopyT1     = copyT1;
+                        snapCopyT2     = copyT2;
+                        flipPhone(false);
+                    }
                 }
 
                 prevProgress = progress;
 
-                // Drive position / copy / text-panel vars based on state
-                if (state === 'neutral' && !animRafId) {
-                    // Scroll drives everything
-                    hero.style.setProperty('--nyb-copy-x',       `${textPanelX.toFixed(1)}px`);
-                    hero.style.setProperty('--nyb-unit-dx',       `${(-phoneShiftX).toFixed(1)}px`);
-                    hero.style.setProperty('--nyb-copy-t0',       copyT0.toFixed(4));
-                    hero.style.setProperty('--nyb-copy-t1',       copyT1.toFixed(4));
-                    hero.style.setProperty('--nyb-copy-t2',       copyT2.toFixed(4));
+                // Drive scroll state
+                if (state === 'scroll' && !animRafId) {
+                    hero.style.setProperty('--nyb-copy-x',      `${textPanelX.toFixed(1)}px`);
+                    hero.style.setProperty('--nyb-unit-dx',      `${(-phoneShiftX).toFixed(1)}px`);
+                    hero.style.setProperty('--nyb-copy-t0',      copyT0.toFixed(4));
+                    hero.style.setProperty('--nyb-copy-t1',      copyT1.toFixed(4));
+                    hero.style.setProperty('--nyb-copy-t2',      copyT2.toFixed(4));
+                    hero.style.setProperty('--nyb-bike-opacity', '0');
+                    hero.style.setProperty('--nyb-phone-roty',   '0deg');
+                    hero.style.setProperty('--nyb-flipped-t',    '0');
+                } else if (state === 'restored') {
+                    hero.style.setProperty('--nyb-copy-x',       `${snapTextPanelX.toFixed(1)}px`);
+                    hero.style.setProperty('--nyb-unit-dx',       `${(-snapShiftX).toFixed(1)}px`);
+                    hero.style.setProperty('--nyb-copy-t0',       snapCopyT0.toFixed(4));
+                    hero.style.setProperty('--nyb-copy-t1',       snapCopyT1.toFixed(4));
+                    hero.style.setProperty('--nyb-copy-t2',       snapCopyT2.toFixed(4));
                     hero.style.setProperty('--nyb-bike-opacity',  '0');
                     hero.style.setProperty('--nyb-phone-roty',    '0deg');
                     hero.style.setProperty('--nyb-flipped-t',     '0');
-                } else if (state === 'restored') {
-                    // Pin the exact P3 values captured at TRIGGER_RIGHT.
-                    // Scroll hands off once progress returns to TRIGGER_LEFT above.
-                    hero.style.setProperty('--nyb-copy-x',        `${snapTextPanelX.toFixed(1)}px`);
-                    hero.style.setProperty('--nyb-unit-dx',        `${(-snapShiftX).toFixed(1)}px`);
-                    hero.style.setProperty('--nyb-copy-t0',        snapCopyT0.toFixed(4));
-                    hero.style.setProperty('--nyb-copy-t1',        snapCopyT1.toFixed(4));
-                    hero.style.setProperty('--nyb-copy-t2',        snapCopyT2.toFixed(4));
-                    hero.style.setProperty('--nyb-bike-opacity',   '0');
-                    hero.style.setProperty('--nyb-phone-roty',     '0deg');
-                    hero.style.setProperty('--nyb-flipped-t',      '0');
                 }
             }
 
-            let ticking = false;
-            function onScrollOrResize() {
-                if (ticking) return;
-                ticking = true;
-                requestAnimationFrame(() => { updateHero(); ticking = false; });
-            }
+            window.addEventListener('resize', () => { cacheHeroAbsTop(); updateHero(); });
 
-            window.addEventListener('scroll', onScrollOrResize, { passive: true });
-            window.addEventListener('resize', onScrollOrResize);
+            // Init: seed vScroll from actual browser scroll in case of mid-page load.
+            cacheHeroAbsTop();
+            vScroll = clamp(window.scrollY - heroAbsTop, 0, getTotal());
             updateHero();
         })();
     </script>
