@@ -43,7 +43,7 @@
             top: calc(50% + var(--nav-height) / 2);
             width: var(--nyb-unit-w, 300px);
             height: var(--nyb-unit-h, 620px);
-            transform: translate(calc(-50% + var(--nyb-unit-dx, 0px)), -50%) scale(var(--nyb-unit-scale, 1)) rotateY(var(--nyb-phone-roty, 0deg));
+            transform: translate(calc(-50% + var(--nyb-unit-dx, 0px)), -50%) scale(calc(var(--nyb-unit-scale, 1) * var(--nyb-bounce-scale, 1))) rotateY(var(--nyb-phone-roty, 0deg));
             transform-origin: center center;
             transform-style: preserve-3d;
             will-change: transform;
@@ -325,8 +325,7 @@
                 <div class="nyb-phone-unit">
                     <div class="nyb-map-viewport">
                         <div class="nyb-map-surface">
-                            <img class="nyb-map-image nyb-screen-map"     src="../images/ProjectImgs/NYBiker/HeroHeader.PNG"    alt="NYBiker map view">
-                            <img class="nyb-map-image nyb-screen-station" src="../images/ProjectImgs/NYBiker/StationDetails.PNG" alt="NYBiker station details" style="opacity:0">
+                            <img class="nyb-map-image nyb-screen-img" src="../images/ProjectImgs/NYBiker/HeroHeader.PNG" alt="NYBiker screen">
                         </div>
                     </div>
                     <img class="nyb-phone-bezel" src="../images/Phone/PhoneBezel.png" alt="Phone bezel framing the map">
@@ -557,51 +556,53 @@
             // bikeLtr: bike sweeps L→R when entering this section; reversed on exit
             const SECTIONS = [
                 {
-                    title:   'Station Details',
-                    body:    'EBike charges, walking directions, and station street-level views all visible at a glance.',
-                    items:   null,
-                    side:    'left',
-                    bikeLtr: true,
-                    screen:  'station',
-                    emoji:   '📍',
+                    title:     'Station Details',
+                    body:      'EBike charges, walking directions, and station street-level views all visible at a glance.',
+                    items:     null,
+                    side:      'left',
+                    bikeLtr:   true,
+                    screenSrc: '../images/ProjectImgs/NYBiker/StationDetails.PNG',
+                    emoji:     '📍',
                 },
                 {
-                    title:   'Advanced Filters',
-                    body:    'Tune bike filters to only see the bike types you want, and even filter out low powered EBikes.',
-                    items:   null,
-                    side:    'right',
-                    bikeLtr: false,
-                    screen:  'map',
-                    emoji:   '🎛️',
+                    title:     'Advanced Filters',
+                    body:      'Tune bike filters to only see the bike types you want, and even filter out low powered EBikes.',
+                    items:     null,
+                    side:      'right',
+                    bikeLtr:   false,
+                    screenSrc: '../images/ProjectImgs/NYBiker/AdvancedFilters.PNG',
+                    emoji:     '🎛️',
                 },
                 {
-                    title:   'Going Somewhere?',
-                    body:    'Search a destination and find the best stations for your trip — start-to-finish bike directions in seconds.',
-                    items:   null,
-                    side:    'left',
-                    bikeLtr: true,
-                    screen:  'map',
-                    emoji:   '🧭',
+                    title:     'Going Somewhere?',
+                    body:      'Search a destination and find the best stations for your trip — start-to-finish bike directions in seconds.',
+                    items:     null,
+                    side:      'left',
+                    bikeLtr:   true,
+                    screenSrc: '../images/ProjectImgs/NYBiker/GoingSomewhere.PNG',
+                    emoji:     '🧭',
                 },
                 {
-                    title:   'Free',
-                    body:    null,
-                    items:   ['No ads', 'No subscriptions', 'No tracking'],
-                    side:    'right',
-                    bikeLtr: false,
-                    screen:  'map',
-                    emoji:   '🎉',
+                    title:     'Free',
+                    body:      null,
+                    items:     ['No ads', 'No subscriptions', 'No tracking'],
+                    side:      'right',
+                    bikeLtr:   false,
+                    screenSrc: '../images/ProjectImgs/NYBiker/Free.PNG',
+                    emoji:     '🎉',
                 },
             ];
 
             const INTRO_TITLE   = 'NYBiker';
             const INTRO_TAGLINE = 'Find\u00A0& plan your perfect ride';
+            const INTRO_SCREEN  = '../images/ProjectImgs/NYBiker/HeroHeader.PNG';
 
             // TRIGGERS[i] = forward scroll progress that activates section i
             // TRIGGERS_BK[i] = backward scroll progress that deactivates section i
             const TRIGGERS    = [0.43, 0.56, 0.67, 0.76];
             const TRIGGERS_BK = [0.39, 0.52, 0.63, 0.72];
-            const FLIP_MS     = 620;
+            const FLIP_MS      = 800;  // total flip duration (spin 0→70%, bounce 70→100%)
+            const BOUNCE_START = 0.70; // normalised t at which spring settle begins
 
             // ── State ────────────────────────────────────────────────────────
             // activeSec: -1 = intro, 0..N-1 = feature section index
@@ -713,13 +714,28 @@
                 const toDx   = isMobile ? 0 : getPhoneDx(toSec);
                 const curDx  = fromDx + (toDx - fromDx) * et;
 
-                const bikeX      = animBikeLtr
+                const bikeX       = animBikeLtr
                     ? -vw * 0.9 + vw * 1.8 * et
                     :  vw * 0.9 - vw * 1.8 * et;
-                const bikeScaleX = animBikeLtr ? 1 : -1;
-                const bikeOpacity = t < 0.97 ? 1 : 0;
+                const bikeScaleX  = animBikeLtr ? 1 : -1;
+                const bikeOpacity = t < BOUNCE_START * 0.97 ? 1 : 0;
                 const rotDir      = toDx >= fromDx ? -1 : 1; // spin direction matches travel direction
-                const phoneRotY   = rotDir * 360 * et;
+
+                // ── Spring-bounce rotation ──────────────────────────────────
+                // Phase 1 (0 → BOUNCE_START): ease-in-out 360° spin.
+                // Phase 2 (BOUNCE_START → 1): dampened cosine overshoot settles to 0°.
+                const spinT    = easeIO(Math.min(t / BOUNCE_START, 1));
+                const spinRotY = rotDir * 360 * spinT;
+                let   phoneRotY = spinRotY;
+                let   bounceScale = 1;
+                if (t > BOUNCE_START) {
+                    const bt       = (t - BOUNCE_START) / (1 - BOUNCE_START); // 0→1
+                    // Dampened cosine: overshoots ~18° then rings down quickly
+                    const bounceRot  = rotDir * Math.exp(-5.5 * bt) * Math.cos(bt * Math.PI * 2.3) * 18;
+                    // Subtle squish pulse on the same phase
+                    bounceScale      = 1 + Math.exp(-4 * bt) * Math.sin(bt * Math.PI * 1.6) * 0.07;
+                    phoneRotY        = spinRotY + bounceRot;
+                }
 
                 // ── Two-panel alpha ───────────────────────────────────────────
                 // Left panel  (.nyb-feature-panel): side:'left'  → --nyb-flipped-t
@@ -736,6 +752,7 @@
 
                 hero.style.setProperty('--nyb-unit-dx',      `${curDx.toFixed(1)}px`);
                 hero.style.setProperty('--nyb-phone-roty',    `${phoneRotY.toFixed(1)}deg`);
+                hero.style.setProperty('--nyb-bounce-scale',  bounceScale.toFixed(5));
                 hero.style.setProperty('--nyb-bike-x',        `${bikeX.toFixed(1)}px`);
                 hero.style.setProperty('--nyb-bike-scalex',   String(bikeScaleX));
                 hero.style.setProperty('--nyb-bike-opacity',  String(bikeOpacity));
@@ -748,9 +765,8 @@
                 // (phone back-face is showing so this is hidden from the user)
                 if (!imgSwapped && t >= 0.5) {
                     imgSwapped = true;
-                    const showStation = toSec >= 0 && SECTIONS[toSec].screen === 'station';
-                    hero.querySelector('.nyb-screen-map').style.opacity     = showStation ? '0' : '1';
-                    hero.querySelector('.nyb-screen-station').style.opacity = showStation ? '1' : '0';
+                    const src = toSec < 0 ? INTRO_SCREEN : SECTIONS[toSec].screenSrc;
+                    hero.querySelector('.nyb-screen-img').src = src;
                     applySection(toSec);
                 }
 
@@ -758,8 +774,9 @@
 
                 // ── Settle ───────────────────────────────────────────────────
                 animRafId = null;
-                hero.style.setProperty('--nyb-bike-opacity', '0');
-                hero.style.setProperty('--nyb-phone-roty',   '0deg');
+                hero.style.setProperty('--nyb-bike-opacity',  '0');
+                hero.style.setProperty('--nyb-phone-roty',    '0deg');
+                hero.style.setProperty('--nyb-bounce-scale',  '1');
 
                 // settlePanel: pin the correct panel at full opacity, hide the other
                 function settlePanel(sec) {
