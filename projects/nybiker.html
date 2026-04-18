@@ -21,8 +21,21 @@
             place-items: center;
             overflow: hidden;
             padding: 0;
-            background: #1f2328;
+            background: #1f2328; /* fallback while bg image loads */
             perspective: 1400px;
+        }
+
+        /* Background lives in its own transformable layer so it can zoom out
+           with the phone (--nyb-bg-scale) and parallax sideways with horizontal
+           motion (--nyb-bg-x). Sits below everything else by DOM order. */
+        .nyb-bg {
+            position: absolute;
+            inset: 0;
+            background: url('../images/ProjectImgs/NYBiker/WSPPhoto.png') center / cover no-repeat;
+            transform: translate3d(var(--nyb-bg-x, 0px), 0, 0) scale(var(--nyb-bg-scale, 1.1));
+            transform-origin: center center;
+            will-change: transform;
+            pointer-events: none;
         }
 
         .nyb-hero-content {
@@ -43,7 +56,11 @@
             top: calc(50% + var(--nav-height) / 2);
             width: var(--nyb-unit-w, 300px);
             height: var(--nyb-unit-h, 620px);
-            transform: translate(calc(-50% + var(--nyb-unit-dx, 0px)), -50%) scale(calc(var(--nyb-unit-scale, 1) * var(--nyb-bounce-scale, 1))) rotateY(var(--nyb-phone-roty, 0deg));
+            /* rotateZ is wrapped in translate(0, ±30%) so it pivots ~80%
+               down the phone (near the bottom) — makes the top swing further
+               for the same angle, emphasising the "flung by the top" feel.
+               rotateY and scale continue to pivot at center. */
+            transform: translate(calc(-50% + var(--nyb-unit-dx, 0px)), -50%) scale(var(--nyb-unit-scale, 1)) rotateY(var(--nyb-phone-roty, 0deg)) translate(0, 30%) rotateZ(var(--nyb-phone-rotz, 0deg)) translate(0, -30%);
             transform-origin: center center;
             transform-style: preserve-3d;
             will-change: transform;
@@ -113,124 +130,75 @@
             filter: url(#nyb-motion-blur);
         }
 
-        /* Text panel — right of phone on desktop */
-        .nyb-copy {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(var(--nyb-copy-x, 200px), -50%);
-            pointer-events: none;
-            text-align: left;
-            width: min(calc(34vw - 60px), 300px);
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0;
-        }
+        /* ── Reusable feature card ────────────────────────────────────────
+           One template, used twice (slot 0 + slot 1). JS picks which slot
+           is "active"; during a flip the inactive slot pre-renders the
+           destination, then both slots animate via --card-x and --card-opacity.
 
-        .nyb-copy-icon {
-            width: 72px;
-            height: 72px;
-            border-radius: 18px;
-            margin-bottom: 20px;
-            opacity: var(--nyb-copy-t0, 0);
-            transform: translateY(calc(12px * (1 - var(--nyb-copy-t0, 0))));
-            will-change: opacity, transform;
-        }
-
-        .nyb-copy-emoji {
-            font-size: 64px;
-            line-height: 1;
-            margin-bottom: 20px;
-            display: none;
-            opacity: var(--nyb-copy-t0, 0);
-            transform: translateY(calc(12px * (1 - var(--nyb-copy-t0, 0))));
-            will-change: opacity, transform;
-        }
-
-        .nyb-title {
-            font-size: clamp(36px, 5vw, 72px);
-            line-height: 0.96;
-            letter-spacing: -0.015em;
-            margin-bottom: 10px;
-            color: #f5f5f7;
-            opacity: var(--nyb-copy-t1, 0);
-            transform: translateY(calc(12px * (1 - var(--nyb-copy-t1, 0))));
-            will-change: opacity, transform;
-        }
-
-        .nyb-tagline {
-            font-size: clamp(16px, 1.8vw, 22px);
-            color: rgba(245,245,247,0.6);
-            margin-bottom: 28px;
-            opacity: var(--nyb-copy-t2, 0);
-            transform: translateY(calc(12px * (1 - var(--nyb-copy-t2, 0))));
-            will-change: opacity, transform;
-        }
-
-        .nyb-copy .project-links {
-            opacity: var(--nyb-copy-t2, 0);
-            transform: translateY(calc(12px * (1 - var(--nyb-copy-t2, 0))));
-            will-change: opacity, transform;
-        }
-
-        .nyb-copy-list {
-            list-style: none;
-            padding: 0;
-            margin: 8px 0 0;
-            display: none;
-            flex-direction: column;
-            gap: 8px;
-            opacity: var(--nyb-copy-t2, 0);
-            transform: translateY(calc(12px * (1 - var(--nyb-copy-t2, 0))));
-            will-change: opacity, transform;
-        }
-
-        .nyb-copy-list li {
-            font-size: clamp(16px, 1.8vw, 22px);
-            color: rgba(245,245,247,0.6);
-            line-height: 1.55;
-        }
-
-        /* Feature panel — always sits LEFT of phone (phone is on right) */
-        .nyb-feature-panel {
+           data-position controls which side of the phone the card hangs off.
+           Phone DOM order is AFTER the cards, so the phone paints in front. */
+        .nyb-feature-card {
             position: absolute;
             left: 50%;
             top: calc(50% + var(--nav-height) / 2);
-            transform: translate(var(--nyb-panel-x, -600px), -50%);
-            pointer-events: none;
             width: min(calc(34vw - 60px), 300px);
+            transform: translate(calc(-50% + var(--card-x, 0px)), -50%);
+            opacity: var(--card-opacity, 0);
+            pointer-events: none;
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
-            text-align: right;
             gap: 0;
-            opacity: var(--nyb-flipped-t, 0);
+            will-change: transform, opacity;
         }
 
-        .nyb-panel-emoji {
+        .nyb-feature-card[data-position="left"]   { align-items: flex-end;   text-align: right; }
+        .nyb-feature-card[data-position="right"]  { align-items: flex-start; text-align: left;  }
+        .nyb-feature-card[data-position="center"] { align-items: center;     text-align: center; }
+
+        /* Icon slot: emoji <span> OR <img>/<picture> for static or gif. */
+        .nyb-feature-icon {
+            width: 72px;
+            height: 72px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .nyb-feature-icon:empty { display: none; }
+
+        .nyb-feature-icon img,
+        .nyb-feature-icon picture {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 18px;
+            display: block;
+        }
+
+        .nyb-feature-icon-emoji {
             font-size: 64px;
             line-height: 1;
-            margin-bottom: 20px;
-            display: none;
         }
 
-        .nyb-panel-title {
-            font-size: clamp(28px, 3.5vw, 56px);
+        .nyb-feature-title {
+            font-size: clamp(36px, 5vw, 72px);
             line-height: 0.96;
             letter-spacing: -0.015em;
-            margin-bottom: 12px;
+            margin: 0 0 10px;
             color: #f5f5f7;
         }
+        .nyb-feature-title:empty { display: none; }
 
-        .nyb-panel-body {
-            font-size: clamp(14px, 1.4vw, 18px);
+        .nyb-feature-body {
+            font-size: clamp(16px, 1.8vw, 22px);
             color: rgba(245,245,247,0.6);
-            line-height: 1.55;
-            margin: 0;
+            margin: 0 0 28px;
+            line-height: 1.4;
         }
+        .nyb-feature-body:empty { display: none; }
 
-        .nyb-panel-list {
+        .nyb-feature-list {
             list-style: none;
             padding: 0;
             margin: 8px 0 0;
@@ -238,19 +206,14 @@
             flex-direction: column;
             gap: 8px;
         }
-
-        .nyb-panel-list li {
-            font-size: clamp(14px, 1.4vw, 18px);
-            color: rgba(245,245,247,0.7);
-            display: flex;
-            align-items: center;
-            gap: 8px;
+        .nyb-feature-list:empty { display: none; }
+        .nyb-feature-list li {
+            font-size: clamp(16px, 1.8vw, 22px);
+            color: rgba(245,245,247,0.6);
+            line-height: 1.55;
         }
 
-        .nyb-check {
-            color: #4facfe;
-            font-weight: 700;
-        }
+        .nyb-feature-cta:empty { display: none; }
 
         @media (max-width: 768px) {
             /* Shift phone toward the top — bottom edge sits at nav + 30px + phoneHeight */
@@ -258,37 +221,24 @@
                 top: calc(var(--nav-height) + 30px + var(--nyb-unit-h) / 2);
             }
 
-            /* Copy panel: anchored below the phone bottom */
-            .nyb-copy {
-                top: calc(var(--nav-height) + 30px + var(--nyb-unit-h) + 20px);
-                bottom: auto;
-                left: 50%;
-                transform: translateX(-50%);
-                text-align: center;
-                align-items: center;
-                width: 90vw;
-            }
-
-            /* Feature panel: below phone, centred */
-            .nyb-feature-panel {
+            /* Cards: stack centred below the phone */
+            .nyb-feature-card {
                 top: calc(var(--nav-height) + 30px + var(--nyb-unit-h) + 20px) !important;
                 left: 50% !important;
-                transform: translateX(-50%) !important;
+                transform: translate(calc(-50% + var(--card-x, 0px)), 0) !important;
                 text-align: center !important;
                 align-items: center !important;
                 width: 90vw;
             }
 
-            .nyb-copy-icon {
-                display: none;
-            }
+            .nyb-feature-icon { display: none; }
 
-            .nyb-title {
+            .nyb-feature-title {
                 font-size: clamp(28px, 7vw, 44px);
                 margin-bottom: 6px;
             }
 
-            .nyb-tagline {
+            .nyb-feature-body {
                 margin-bottom: 16px;
             }
 
@@ -319,9 +269,28 @@
 
     <section class="nyb-scroll-hero" id="nybScrollHero">
         <div class="nyb-scroll-stage">
+            <div class="nyb-bg" aria-hidden="true"></div>
             <img class="nyb-bike" src="../images/ProjectImgs/NYBiker/bicycle.png" alt="Bicycle">
 
             <div class="nyb-hero-content">
+                <!-- Two interchangeable feature slots. JS swaps which is "active";
+                     during a flip the inactive slot pre-renders the destination
+                     section, then both slots animate (slide + cross-fade). -->
+                <div class="nyb-feature-card" data-slot="0" data-position="right">
+                    <div class="nyb-feature-icon"></div>
+                    <h2 class="nyb-feature-title"></h2>
+                    <p class="nyb-feature-body"></p>
+                    <ul class="nyb-feature-list"></ul>
+                    <div class="nyb-feature-cta"></div>
+                </div>
+                <div class="nyb-feature-card" data-slot="1" data-position="right">
+                    <div class="nyb-feature-icon"></div>
+                    <h2 class="nyb-feature-title"></h2>
+                    <p class="nyb-feature-body"></p>
+                    <ul class="nyb-feature-list"></ul>
+                    <div class="nyb-feature-cta"></div>
+                </div>
+
                 <div class="nyb-phone-unit">
                     <div class="nyb-map-viewport">
                         <div class="nyb-map-surface">
@@ -331,95 +300,6 @@
                     <img class="nyb-phone-bezel" src="../images/Phone/PhoneBezel.png" alt="Phone bezel framing the map">
                     <img class="nyb-phone-back" src="../images/Phone/PhoneBack.png" alt="Phone back">
                 </div>
-
-                <div class="nyb-copy">
-                    <img class="nyb-copy-icon" src="../images/Icons/NYBiker_Icon.png" alt="NYBiker app icon">
-                    <span class="nyb-copy-emoji"></span>
-                    <h1 class="nyb-title">NYBiker</h1>
-                    <p class="nyb-tagline">Find &amp; plan your perfect ride</p>
-                    <ul class="nyb-copy-list"></ul>
-                    <div class="project-links">
-                        <a href="https://apps.apple.com/us/app/nybiker/id6740424241" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Download on App Store</a>
-                    </div>
-                </div>
-
-                <div class="nyb-feature-panel">
-                    <span class="nyb-panel-emoji"></span>
-                    <h2 class="nyb-panel-title">Station Details</h2>
-                    <p class="nyb-panel-body">EBike charges, walking directions, and station street-level views all visible at a glance.</p>
-                    <ul class="nyb-panel-list" style="display:none"></ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="features-section">
-        <div class="features-container">
-            <h2 class="section-title">What It Does</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🗺️</div>
-                    <h3 class="feature-title">Station Discovery</h3>
-                    <p class="feature-description">
-                        Browse nearby bike stations on an interactive map and quickly see where bikes and docks are available.
-                    </p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🚲</div>
-                    <h3 class="feature-title">Route Planning</h3>
-                    <p class="feature-description">
-                        Plan efficient point-to-point rides with destination search and directions designed for bike commuters.
-                    </p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📍</div>
-                    <h3 class="feature-title">Trip Context</h3>
-                    <p class="feature-description">
-                        Understand station density and neighborhood options before you ride, so every trip is less guesswork.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="screenshots-section">
-        <div class="screenshots-container">
-            <h2 class="section-title">Preview</h2>
-            <div class="screenshot-grid">
-                <div class="screenshot-card">
-                    <img class="screenshot-img" src="../images/Highlights/NYBikeriOS26.png" alt="NYBiker app screenshot showing map and station discovery">
-                </div>
-                <div class="screenshot-card">
-                    <img class="screenshot-img" src="../images/Highlights/NYBikeriOS26.png" alt="NYBiker app screenshot showing route planning and directions">
-                </div>
-                <div class="screenshot-card">
-                    <img class="screenshot-img" src="../images/Highlights/NYBikeriOS26.png" alt="NYBiker app screenshot showing trip details and station status">
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="tech-section">
-        <div class="tech-container">
-            <h2 class="section-title">Built With</h2>
-            <div class="tech-list">
-                <span class="tech-tag">SwiftUI</span>
-                <span class="tech-tag">MapKit</span>
-                <span class="tech-tag">Core Location</span>
-                <span class="tech-tag">REST APIs</span>
-                <span class="tech-tag">iOS</span>
-            </div>
-        </div>
-    </section>
-
-    <section class="contact-section">
-        <div class="content-wrapper">
-            <h2 class="section-title">Ride Smarter in NYC</h2>
-            <p class="about-text" style="margin-bottom: 40px;">
-                NYBiker helps riders make quicker station and route decisions when every minute in the city matters.
-            </p>
-            <div class="project-links">
-                <a href="https://apps.apple.com/us/app/nybiker/id6740424241" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Open App Store Listing</a>
             </div>
         </div>
     </section>
@@ -551,58 +431,76 @@
             }
 
             // ── Feature sections ─────────────────────────────────────────────
-            // side: 'left'  → text panel on left,  phone on right (.nyb-feature-panel)
-            // side: 'right' → text panel on right, phone on left  (.nyb-copy)
-            // bikeLtr: bike sweeps L→R when entering this section; reversed on exit
+            // Reusable section schema — same shape for intro and every feature:
+            //   title      — headline (string)
+            //   body       — paragraph copy (string | null)
+            //   items      — bullet list (string[] | null)
+            //   icon       — { emoji: '📍' }  OR  { src: '/path.png|.gif', alt: '...' }
+            //                                 — DOM picks <span> vs <img> automatically
+            //   position   — 'left' | 'right' | 'center' (relative to phone)
+            //   bikeLtr    — bike sweeps L→R on entry to this section (reversed on exit)
+            //   screenSrc  — image painted onto the phone screen
+            //   cta        — { label, href } (intro only, optional)
+            const INTRO = {
+                title:     'NYBiker',
+                body:      'Find\u00A0& plan your perfect ride',
+                items:     null,
+                icon:      { src: '../images/Icons/NYBiker_Icon.png', alt: 'NYBiker app icon' },
+                position:  'right',
+                bikeLtr:   true,
+                screenSrc: '../images/ProjectImgs/NYBiker/HeroHeader.PNG',
+                cta:       { label: 'Download on App Store', href: 'https://apps.apple.com/us/app/nybiker/id6740424241' },
+            };
+
             const SECTIONS = [
                 {
                     title:     'Station Details',
                     body:      'EBike charges, walking directions, and station street-level views all visible at a glance.',
                     items:     null,
-                    side:      'left',
+                    icon:      { emoji: '📍' },
+                    position:  'left',
                     bikeLtr:   true,
                     screenSrc: '../images/ProjectImgs/NYBiker/StationDetails.PNG',
-                    emoji:     '📍',
                 },
                 {
                     title:     'Advanced Filters',
                     body:      'Tune bike filters to only see the bike types you want, and even filter out low powered EBikes.',
                     items:     null,
-                    side:      'right',
+                    icon:      { emoji: '🎛️' },
+                    position:  'right',
                     bikeLtr:   false,
                     screenSrc: '../images/ProjectImgs/NYBiker/AdvancedFilters.PNG',
-                    emoji:     '🎛️',
                 },
                 {
                     title:     'Going Somewhere?',
                     body:      'Search a destination and find the best stations for your trip — start-to-finish bike directions in seconds.',
                     items:     null,
-                    side:      'left',
+                    icon:      { emoji: '🧭' },
+                    position:  'left',
                     bikeLtr:   true,
                     screenSrc: '../images/ProjectImgs/NYBiker/GoingSomewhere.PNG',
-                    emoji:     '🧭',
                 },
                 {
                     title:     'Free',
                     body:      null,
                     items:     ['No ads', 'No subscriptions', 'No tracking'],
-                    side:      'right',
+                    icon:      { emoji: '🎉' },
+                    position:  'right',
                     bikeLtr:   false,
                     screenSrc: '../images/ProjectImgs/NYBiker/Free.PNG',
-                    emoji:     '🎉',
                 },
             ];
 
-            const INTRO_TITLE   = 'NYBiker';
-            const INTRO_TAGLINE = 'Find\u00A0& plan your perfect ride';
-            const INTRO_SCREEN  = '../images/ProjectImgs/NYBiker/HeroHeader.PNG';
+            // Resolve a section index (-1 = intro, 0..N = feature)
+            function sectionData(sec) { return sec < 0 ? INTRO : SECTIONS[sec]; }
 
             // TRIGGERS[i] = forward scroll progress that activates section i
             // TRIGGERS_BK[i] = backward scroll progress that deactivates section i
             const TRIGGERS    = [0.43, 0.56, 0.67, 0.76];
             const TRIGGERS_BK = [0.39, 0.52, 0.63, 0.72];
-            const FLIP_MS      = 800;  // total flip duration (spin 0→70%, bounce 70→100%)
-            const BOUNCE_START = 0.70; // normalised t at which spring settle begins
+            const FLIP_MS    = 800;  // total flip duration
+            const PEAK_POINT = 0.72; // normalised t at which phone hits overshoot peak
+                                     // (spin + bike complete here; return begins)
 
             // ── State ────────────────────────────────────────────────────────
             // activeSec: -1 = intro, 0..N-1 = feature section index
@@ -616,94 +514,103 @@
             let imgSwapped   = false;
 
             // Snapped at the moment each flip fires
-            let snapShiftX     = 0;
-            let snapBezelW     = 0;
-            let snapTextPanelX = 0;
-            let snapCopyT0     = 1;
-            let snapCopyT1     = 1;
-            let snapCopyT2     = 1;
+            let snapShiftX = 0;
+            let snapBezelW = 0;
+            let snapCopyT0 = 1;
 
-            // ── DOM refs ─────────────────────────────────────────────────────
-            // Left panel (.nyb-feature-panel) — side:'left' sections
-            const panel      = hero.querySelector('.nyb-feature-panel');
-            const panelEmoji = panel.querySelector('.nyb-panel-emoji');
-            const panelTitle = panel.querySelector('.nyb-panel-title');
-            const panelBody  = panel.querySelector('.nyb-panel-body');
-            const panelList  = panel.querySelector('.nyb-panel-list');
-            // Right panel (.nyb-copy) — intro + side:'right' sections
-            const copyEl      = hero.querySelector('.nyb-copy');
-            const copyIcon    = copyEl.querySelector('.nyb-copy-icon');
-            const copyEmoji   = copyEl.querySelector('.nyb-copy-emoji');
-            const copyTitle   = copyEl.querySelector('.nyb-title');
-            const copyTagline = copyEl.querySelector('.nyb-tagline');
-            const copyList    = copyEl.querySelector('.nyb-copy-list');
-            const copyLinks   = copyEl.querySelector('.project-links');
+            // ── Slot management ──────────────────────────────────────────────
+            // Two interchangeable feature-card DOM nodes. activeSlotIdx points
+            // at whichever currently shows activeSec; the other is parked at
+            // opacity 0 (or pre-rendered with the destination section while a
+            // flip is mid-flight).
+            const slots = Array.from(hero.querySelectorAll('.nyb-feature-card'));
+            let activeSlotIdx = 0;
 
-
-            // ── Panel helpers ────────────────────────────────────────────────
-            function getPhoneDx(sec) {
-                if (sec < 0) return -snapShiftX;
-                return SECTIONS[sec].side === 'left' ? snapShiftX : -snapShiftX;
+            // Width of a feature card in the current viewport. Mirrors the
+            // CSS `width: min(calc(34vw - 60px), 300px)` for desktop, and 90vw
+            // on mobile, so x-anchor math stays in sync with layout.
+            function getCardW() {
+                const vw = window.innerWidth;
+                return vw <= 768 ? vw * 0.9 : Math.min(vw * 0.34 - 60, 300);
             }
 
-            function applyLeftPanelX() {
-                if (window.innerWidth <= 768) return;
-                const panelW = Math.min(window.innerWidth * 0.34 - 60, 300);
-                hero.style.setProperty('--nyb-panel-x',
-                    `${(snapShiftX - snapBezelW / 2 - 44 - panelW).toFixed(1)}px`);
-            }
+            // Render section data into a slot DOM node.
+            function populateSlot(idx, sec) {
+                const slot = slots[idx];
+                const data = sectionData(sec);
+                slot.dataset.position = data.position || 'right';
 
-            // Apply section content to its panel; hide the opposite panel's elements.
-            // sec = -1  → restore intro on the right panel
-            // sec >= 0  → side:'left'  populates .nyb-feature-panel (left)
-            //             side:'right' populates .nyb-copy          (right)
-            function applySection(sec) {
-                const makeItems = items => items
-                    .map(i => `<li>${i}</li>`)
-                    .join('');
-
-                if (sec < 0) {
-                    // Intro: right panel shows app icon, title, tagline, CTA
-                    copyIcon.style.display    = '';
-                    copyEmoji.style.display   = 'none';
-                    copyTitle.textContent     = INTRO_TITLE;
-                    copyTagline.textContent   = INTRO_TAGLINE;
-                    copyTagline.style.display = '';
-                    copyList.style.display    = 'none';
-                    copyLinks.style.display   = '';
-                    return;
-                }
-
-                const s = SECTIONS[sec];
-                if (s.side === 'left') {
-                    // Left panel (.nyb-feature-panel): emoji + title + body/items right-aligned
-                    panelEmoji.style.display = s.emoji ? 'block' : 'none';
-                    panelEmoji.textContent   = s.emoji || '';
-                    panelTitle.textContent   = s.title;
-                    panelBody.style.display  = s.body  ? '' : 'none';
-                    if (s.body)  panelBody.textContent = s.body;
-                    panelList.style.display = s.items ? '' : 'none';
-                    if (s.items) panelList.innerHTML = makeItems(s.items);
-                    applyLeftPanelX();
+                // Icon: emoji span OR <img> (works for png/gif/webp/etc.)
+                const iconWrap = slot.querySelector('.nyb-feature-icon');
+                if (data.icon && data.icon.src) {
+                    const alt = (data.icon.alt || '').replace(/"/g, '&quot;');
+                    iconWrap.innerHTML = `<img src="${data.icon.src}" alt="${alt}">`;
+                } else if (data.icon && data.icon.emoji) {
+                    iconWrap.innerHTML = `<span class="nyb-feature-icon-emoji">${data.icon.emoji}</span>`;
                 } else {
-                    // Right panel (.nyb-copy): emoji replaces icon, body replaces tagline, no CTA
-                    copyIcon.style.display    = 'none';
-                    copyEmoji.style.display   = s.emoji ? 'block' : 'none';
-                    copyEmoji.textContent     = s.emoji || '';
-                    copyTitle.textContent     = s.title;
-                    copyTagline.style.display = s.body  ? '' : 'none';
-                    if (s.body)  copyTagline.textContent = s.body;
-                    copyList.style.display    = s.items ? 'flex' : 'none';
-                    if (s.items) copyList.innerHTML = makeItems(s.items);
-                    copyLinks.style.display   = 'none';
+                    iconWrap.innerHTML = '';
                 }
+
+                slot.querySelector('.nyb-feature-title').textContent = data.title || '';
+                slot.querySelector('.nyb-feature-body').textContent  = data.body  || '';
+
+                const list = slot.querySelector('.nyb-feature-list');
+                list.innerHTML = data.items ? data.items.map(i => `<li>${i}</li>`).join('') : '';
+
+                const cta = slot.querySelector('.nyb-feature-cta');
+                if (data.cta) {
+                    const label = (data.cta.label || '').replace(/"/g, '&quot;');
+                    const href  = (data.cta.href  || '').replace(/"/g, '&quot;');
+                    cta.innerHTML = `<a href="${href}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">${label}</a>`;
+                    cta.style.pointerEvents = 'auto';
+                } else {
+                    cta.innerHTML = '';
+                    cta.style.pointerEvents = '';
+                }
+            }
+
+            function setSlot(idx, x, opacity) {
+                const slot = slots[idx];
+                slot.style.setProperty('--card-x',       `${x.toFixed(1)}px`);
+                slot.style.setProperty('--card-opacity', opacity.toFixed(4));
+            }
+
+            // ── Position math ────────────────────────────────────────────────
+            // Phone shifts AWAY from the side where its text panel hangs, so
+            // the text doesn't push off-screen.
+            function getPhoneDx(sec) {
+                const pos = sectionData(sec).position;
+                if (pos === 'left')   return  snapShiftX; // phone right, text left
+                if (pos === 'right')  return -snapShiftX; // phone left, text right
+                return 0;                                  // center: phone stays centred
+            }
+
+            // Resting x-anchor for a card with `position`, given current phone dx.
+            // Card moves with the phone but at PARALLAX < 1, so the phone visually
+            // leads. CSS centres the card via translate(-50%); --card-x is the
+            // additional shift on top of that centring.
+            const PARALLAX     = 0.7;
+            const CARD_MARGIN  = 44;
+            // Background parallax — moves SAME direction as phone but much less,
+            // creating a subtle depth feel. Scale shrinks slightly along with
+            // the phone's zoom-out so the background also "settles" into place.
+            const BG_PARALLAX  = 0.10;
+            const BG_MAX_SCALE = 1.20;
+            const BG_MIN_SCALE = 1.10;
+            function cardAnchor(phoneDx, bezelW, position) {
+                // Mobile stacks cards below the phone — no horizontal offset.
+                if (window.innerWidth <= 768) return 0;
+                const cardW = getCardW();
+                const base  = phoneDx * PARALLAX;
+                if (position === 'left')  return base - bezelW / 2 - CARD_MARGIN - cardW / 2;
+                if (position === 'right') return base + bezelW / 2 + CARD_MARGIN + cardW / 2;
+                return base;
             }
 
             // ── Animation tick ───────────────────────────────────────────────
             function tickFlip(ts) {
                 if (!animStartTs) animStartTs = ts;
                 const t  = Math.min((ts - animStartTs) / FLIP_MS, 1);
-                const et = easeIO(t);
 
                 const vw       = window.innerWidth;
                 const isMobile = vw <= 768;
@@ -712,62 +619,134 @@
 
                 const fromDx = isMobile ? 0 : getPhoneDx(fromSec);
                 const toDx   = isMobile ? 0 : getPhoneDx(toSec);
-                const curDx  = fromDx + (toDx - fromDx) * et;
 
-                const bikeX       = animBikeLtr
-                    ? -vw * 0.9 + vw * 1.8 * et
-                    :  vw * 0.9 - vw * 1.8 * et;
-                const bikeScaleX  = animBikeLtr ? 1 : -1;
-                const bikeOpacity = t < BOUNCE_START * 0.97 ? 1 : 0;
-                const rotDir      = toDx >= fromDx ? -1 : 1; // spin direction matches travel direction
+                const dir    = Math.sign(toDx - fromDx);       // +1 R, -1 L, 0 mobile
+                const rotDir = toDx >= fromDx ? -1 : 1;         // spin direction matches travel
 
-                // ── Spring-bounce rotation ──────────────────────────────────
-                // Phase 1 (0 → BOUNCE_START): ease-in-out 360° spin.
-                // Phase 2 (BOUNCE_START → 1): dampened cosine overshoot settles to 0°.
-                const spinT    = easeIO(Math.min(t / BOUNCE_START, 1));
-                const spinRotY = rotDir * 360 * spinT;
-                let   phoneRotY = spinRotY;
-                let   bounceScale = 1;
-                if (t > BOUNCE_START) {
-                    const bt       = (t - BOUNCE_START) / (1 - BOUNCE_START); // 0→1
-                    // Dampened cosine: overshoots ~18° then rings down quickly
-                    const bounceRot  = rotDir * Math.exp(-5.5 * bt) * Math.cos(bt * Math.PI * 2.3) * 18;
-                    // Subtle squish pulse on the same phase
-                    bounceScale      = 1 + Math.exp(-4 * bt) * Math.sin(bt * Math.PI * 1.6) * 0.07;
-                    phoneRotY        = spinRotY + bounceRot;
+                // ── Timeline ───────────────────────────────────────────────
+                // Phase A (0 → PEAK_POINT): phone flies from fromDx all the
+                //   way past toDx to (toDx + OVERSHOOT), spinning 360°.
+                // Phase B (PEAK_POINT → 1): phone settles back from the
+                //   overshoot peak to toDx. Spin is already complete.
+                // Both segments use smoothstep so position (and therefore
+                // velocity) is C¹-continuous at the overshoot peak — velocity
+                // naturally crosses zero there, so any tilt that tracks
+                // velocity will smoothly reverse with no "kick".
+                // Horizontal overshoots by 20% of flight distance — phone slides
+                // visibly past target, then settles back. Spin is tied 1:1 to
+                // horizontal progress, so it naturally peaks at 120% (432°) and
+                // resolves to 100% (360°) when the phone settles.
+                const OVERSHOOT_RATIO    = 0.20;
+                const MAX_TILT_DEG       = 14;   // peak tilt during flight
+                const RETURN_TILT_RATIO  = 0.15; // return tilt relative to flight (subtle counter-lean)
+                const TILT_DELAY         = 0.45; // fraction of FLIP_MS before Z tilt activates
+                const TILT_RAMP          = 0.15; // fraction of FLIP_MS over which Z tilt fades in
+                const flightDist = Math.abs(toDx - fromDx);
+                const peakDx     = toDx + dir * flightDist * OVERSHOOT_RATIO;
+
+                let curDx, velX, phaseVelPeak, tiltCoef;
+                if (t < PEAK_POINT) {
+                    const p     = t / PEAK_POINT;
+                    const sstep = p * p * (3 - 2 * p);           // smoothstep
+                    const sprim = 6 * p * (1 - p) / PEAK_POINT;   // d/dt
+                    curDx        = fromDx + (peakDx - fromDx) * sstep;
+                    velX         = (peakDx - fromDx) * sprim;
+                    phaseVelPeak = Math.abs(peakDx - fromDx) * 1.5 / PEAK_POINT;
+                    tiltCoef     = MAX_TILT_DEG;
+                } else {
+                    const p     = (t - PEAK_POINT) / (1 - PEAK_POINT);
+                    const sstep = p * p * (3 - 2 * p);
+                    const sprim = 6 * p * (1 - p) / (1 - PEAK_POINT);
+                    curDx        = peakDx + (toDx - peakDx) * sstep;
+                    velX         = (toDx - peakDx) * sprim;        // negative on return
+                    phaseVelPeak = Math.abs(toDx - peakDx) * 1.5 / (1 - PEAK_POINT);
+                    tiltCoef     = MAX_TILT_DEG * RETURN_TILT_RATIO;
                 }
 
-                // ── Two-panel alpha ───────────────────────────────────────────
-                // Left panel  (.nyb-feature-panel): side:'left'  → --nyb-flipped-t
-                // Right panel (.nyb-copy):           intro + side:'right' → --nyb-copy-t0/1/2
-                const fromUseLeft = fromSec >= 0 && SECTIONS[fromSec].side === 'left';
-                const toUseLeft   = toSec   >= 0 && SECTIONS[toSec].side   === 'left';
+                // Tilt = normalised velocity × phase coefficient × delay gate.
+                // The gate (smoothstep ramp) keeps Z tilt at 0 until TILT_DELAY,
+                // then fades it in over TILT_RAMP — phone slides flat first, then
+                // starts swinging from the top once the bike is on screen.
+                const tiltGateRaw   = Math.max(0, Math.min(1, (t - TILT_DELAY) / TILT_RAMP));
+                const tiltGate      = tiltGateRaw * tiltGateRaw * (3 - 2 * tiltGateRaw);
+                const rotZ = phaseVelPeak > 0
+                    ? (velX / phaseVelPeak) * tiltCoef * tiltGate
+                    : 0;
+
+                // Phone spin is driven by horizontal position progress, but the
+                // overshoot is decoupled: position overshoots 20%, spin only
+                // overshoots SPIN_OVERSHOOT (subtle wobble past 360°).
+                // Linear remap per phase preserves C¹ continuity at the peak
+                // because position velocity is 0 there.
+                const SPIN_OVERSHOOT = 0.03; // 3% → ~11° past 360°
+                const posProgress = flightDist > 0
+                    ? (curDx - fromDx) * dir / flightDist
+                    : 0;
+                const peakSpin    = 1 + SPIN_OVERSHOOT;
+                let spinFrac;
+                if (t < PEAK_POINT) {
+                    // posProgress: 0 → (1 + OVERSHOOT_RATIO); map to 0 → peakSpin
+                    spinFrac = posProgress / (1 + OVERSHOOT_RATIO) * peakSpin;
+                } else {
+                    // posProgress: (1 + OVERSHOOT_RATIO) → 1; map to peakSpin → 1
+                    spinFrac = 1 + (posProgress - 1) / OVERSHOOT_RATIO * SPIN_OVERSHOOT;
+                }
+                const phoneRotY = rotDir * 360 * spinFrac;
+
+                // Bike crossing stays time-driven (easeIO over the flight phase)
+                // so it doesn't inherit the phone's overshoot.
+                const spinProgress = Math.min(t / PEAK_POINT, 1);
+                const spinEased    = easeIO(spinProgress);
+                const bikeX       = animBikeLtr
+                    ? -vw * 0.9 + vw * 1.8 * spinEased
+                    :  vw * 0.9 - vw * 1.8 * spinEased;
+                const bikeScaleX  = animBikeLtr ? 1 : -1;
+                const bikeOpacity = spinProgress < 0.97 ? 1 : 0;
+
+                // ── Slot transforms ───────────────────────────────────────────
+                // Both slots track the phone via cardAnchor (parallax). Layered
+                // on top: a slide offset that pushes the outgoing card off in
+                // the direction of travel and pulls the incoming card in from
+                // the opposite side. Opacity cross-fades at the midpoint.
+                const SLIDE_DIST = 120;
+                const slideDir = dir !== 0 ? dir : (animFwd ? 1 : -1);
+                const slideE   = easeIO(t);
+                const fromSlideX = slideDir * SLIDE_DIST * slideE;          // 0 → +SLIDE
+                const toSlideX   = -slideDir * SLIDE_DIST * (1 - slideE);   // -SLIDE → 0
+
+                const fromPos = sectionData(fromSec).position;
+                const toPos   = sectionData(toSec).position;
+                const fromAnchor = cardAnchor(curDx, snapBezelW, fromPos);
+                const toAnchor   = cardAnchor(curDx, snapBezelW, toPos);
+
                 const fadeOut = t < 0.5 ? 1 - easeIO(t * 2) : 0;
                 const fadeIn  = t < 0.5 ? 0 : easeIO((t - 0.5) * 2);
+                // Intro section's resting opacity is throttled by its scroll-in
+                // progress (snapCopyT0); feature sections always rest at 1.
+                const fromMax = fromSec < 0 ? snapCopyT0 : 1;
+                const toMax   = toSec   < 0 ? snapCopyT0 : 1;
 
-                const leftAlpha  = (fromUseLeft ? fadeOut : 0) + (toUseLeft ? fadeIn : 0);
-                // Intro right panel fades proportional to its snap value; feature sections fade 0→1
-                const rightAlpha = (!fromUseLeft ? fadeOut * (fromSec < 0 ? snapCopyT0 : 1) : 0)
-                                 + (!toUseLeft   ? fadeIn  * (toSec   < 0 ? snapCopyT0 : 1) : 0);
+                const fromIdx = activeSlotIdx;
+                const toIdx   = 1 - activeSlotIdx;
+                setSlot(fromIdx, fromAnchor + fromSlideX, fadeOut * fromMax);
+                setSlot(toIdx,   toAnchor   + toSlideX,   fadeIn  * toMax);
 
                 hero.style.setProperty('--nyb-unit-dx',      `${curDx.toFixed(1)}px`);
                 hero.style.setProperty('--nyb-phone-roty',    `${phoneRotY.toFixed(1)}deg`);
-                hero.style.setProperty('--nyb-bounce-scale',  bounceScale.toFixed(5));
+                hero.style.setProperty('--nyb-phone-rotz',    `${rotZ.toFixed(2)}deg`);
                 hero.style.setProperty('--nyb-bike-x',        `${bikeX.toFixed(1)}px`);
                 hero.style.setProperty('--nyb-bike-scalex',   String(bikeScaleX));
                 hero.style.setProperty('--nyb-bike-opacity',  String(bikeOpacity));
-                hero.style.setProperty('--nyb-flipped-t',     leftAlpha.toFixed(4));
-                hero.style.setProperty('--nyb-copy-t0',       rightAlpha.toFixed(4));
-                hero.style.setProperty('--nyb-copy-t1',       rightAlpha.toFixed(4));
-                hero.style.setProperty('--nyb-copy-t2',       rightAlpha.toFixed(4));
+                // Background uses a monotonic time-eased interpolation between
+                // from→to so it never inherits the phone's overshoot wobble.
+                const bgDx = fromDx + (toDx - fromDx) * easeIO(t);
+                hero.style.setProperty('--nyb-bg-x',          `${(bgDx * BG_PARALLAX).toFixed(2)}px`);
 
-                // Midpoint: swap screen image + apply destination section content
-                // (phone back-face is showing so this is hidden from the user)
-                if (!imgSwapped && t >= 0.5) {
+                // Midpoint: swap screen image when phone's back faces the viewer.
+                // Card content is pre-populated in flipPhone() so no swap needed here.
+                if (!imgSwapped && spinFrac >= 0.5) {
                     imgSwapped = true;
-                    const src = toSec < 0 ? INTRO_SCREEN : SECTIONS[toSec].screenSrc;
-                    hero.querySelector('.nyb-screen-img').src = src;
-                    applySection(toSec);
+                    hero.querySelector('.nyb-screen-img').src = sectionData(toSec).screenSrc;
                 }
 
                 if (t < 1) { animRafId = requestAnimationFrame(tickFlip); return; }
@@ -776,42 +755,25 @@
                 animRafId = null;
                 hero.style.setProperty('--nyb-bike-opacity',  '0');
                 hero.style.setProperty('--nyb-phone-roty',    '0deg');
-                hero.style.setProperty('--nyb-bounce-scale',  '1');
+                hero.style.setProperty('--nyb-phone-rotz',    '0deg');
 
-                // settlePanel: pin the correct panel at full opacity, hide the other
-                function settlePanel(sec) {
-                    const useLeft = sec >= 0 && SECTIONS[sec].side === 'left';
-                    hero.style.setProperty('--nyb-flipped-t', useLeft ? '1' : '0');
-                    hero.style.setProperty('--nyb-copy-t0',   useLeft ? '0' : '1');
-                    hero.style.setProperty('--nyb-copy-t1',   useLeft ? '0' : '1');
-                    hero.style.setProperty('--nyb-copy-t2',   useLeft ? '0' : '1');
-                    if (!useLeft && sec >= 0) {
-                        // keep right panel anchored at snap position
-                        hero.style.setProperty('--nyb-copy-x', `${snapTextPanelX.toFixed(1)}px`);
-                    }
-                }
+                // The "to" slot is now the active one. Swap our pointer.
+                activeSlotIdx = 1 - activeSlotIdx;
+                if (animFwd) activeSec++;
+                else         activeSec--;
 
-                if (animFwd) {
-                    activeSec++;
-                    state = 'pinned';
-                    hero.style.setProperty('--nyb-unit-dx', `${(isMobile ? 0 : getPhoneDx(activeSec)).toFixed(1)}px`);
-                    settlePanel(activeSec);
-                } else {
-                    activeSec--;
-                    if (activeSec < 0) {
-                        state = 'restored';
-                        hero.style.setProperty('--nyb-flipped-t', '0');
-                        hero.style.setProperty('--nyb-copy-t0',   snapCopyT0.toFixed(4));
-                        hero.style.setProperty('--nyb-copy-t1',   snapCopyT1.toFixed(4));
-                        hero.style.setProperty('--nyb-copy-t2',   snapCopyT2.toFixed(4));
-                        hero.style.setProperty('--nyb-copy-x',    `${snapTextPanelX.toFixed(1)}px`);
-                        hero.style.setProperty('--nyb-unit-dx',   `${(isMobile ? 0 : -snapShiftX).toFixed(1)}px`);
-                    } else {
-                        state = 'pinned';
-                        hero.style.setProperty('--nyb-unit-dx', `${(isMobile ? 0 : getPhoneDx(activeSec)).toFixed(1)}px`);
-                        settlePanel(activeSec);
-                    }
-                }
+                state = (activeSec < 0) ? 'restored' : 'pinned';
+
+                const restPhoneDx = isMobile ? 0 : getPhoneDx(activeSec);
+                hero.style.setProperty('--nyb-unit-dx', `${restPhoneDx.toFixed(1)}px`);
+
+                // Pin active slot at its anchor (full opacity for features;
+                // snap-throttled for the intro). Park the other slot offscreen.
+                const data    = sectionData(activeSec);
+                const restX   = cardAnchor(restPhoneDx, snapBezelW, data.position);
+                const restOpc = activeSec < 0 ? snapCopyT0 : 1;
+                setSlot(activeSlotIdx,     restX, restOpc);
+                setSlot(1 - activeSlotIdx, 0,     0);
 
                 // Re-evaluate immediately after settling so chained backward transitions
                 // fire even when the scroll position is static (no scroll events incoming).
@@ -821,19 +783,23 @@
             // fwd=true  → entering the next section (bike uses that section's bikeLtr)
             // fwd=false → leaving the current section (bike reverses that section's bikeLtr)
             function flipPhone(fwd) {
-                const sec   = fwd ? activeSec + 1 : activeSec;
-                animBikeLtr = fwd ? SECTIONS[sec].bikeLtr : !SECTIONS[sec].bikeLtr;
-                state       = 'animating';
-                animFwd     = fwd;
-                animStartTs = null;
-                imgSwapped  = false;
+                const sec     = fwd ? activeSec + 1 : activeSec;
+                animBikeLtr   = fwd ? SECTIONS[sec].bikeLtr : !SECTIONS[sec].bikeLtr;
+                state         = 'animating';
+                animFwd       = fwd;
+                animStartTs   = null;
+                imgSwapped    = false;
+                // Pre-render the destination section into the inactive slot so
+                // its slide-in + cross-fade has content from frame 0.
+                const toSec   = fwd ? activeSec + 1 : activeSec - 1;
+                populateSlot(1 - activeSlotIdx, toSec);
                 // Snap vScroll (and browser scroll) to the exact threshold.
                 // Because applyDelta() returns immediately when state==='animating',
                 // no further input can advance past this point until the flip settles.
-                const p     = fwd ? TRIGGERS[sec] : TRIGGERS_BK[sec];
-                vScroll     = p * getTotal();
+                const p       = fwd ? TRIGGERS[sec] : TRIGGERS_BK[sec];
+                vScroll       = p * getTotal();
                 syncBrowserScroll();
-                animRafId   = requestAnimationFrame(tickFlip);
+                animRafId     = requestAnimationFrame(tickFlip);
             }
 
             // ── Main update ───────────────────────────────────────────────────
@@ -853,18 +819,20 @@
 
                 const frameT = easeOut(mapRange(progress, 0,    0.26));
                 const copyT0 = easeOut(mapRange(progress, 0.28, 0.38));
-                const copyT1 = easeOut(mapRange(progress, 0.31, 0.41));
-                const copyT2 = easeOut(mapRange(progress, 0.34, 0.44));
 
                 const startScale   = Math.max(vw / screenW, vh / screenH) * 1.25;
                 const unitScale    = startScale + (1 - startScale) * frameT;
                 const screenRadius = (isMobile ? 22 : 36) * frameT;
 
                 const phoneShiftX = isMobile ? 0 : Math.min(bezelW * 0.48, vw * 0.18) * copyT0;
-                const textPanelX  = -phoneShiftX + bezelW / 2 + 44;
 
                 hero.style.setProperty('--nyb-unit-w', `${bezelW.toFixed(2)}px`);
                 hero.style.setProperty('--nyb-unit-h', `${bezelH.toFixed(2)}px`);
+
+                // Background zooms out alongside the phone (frameT goes 0→1
+                // over progress 0→0.26).
+                const bgScale = BG_MAX_SCALE + (BG_MIN_SCALE - BG_MAX_SCALE) * frameT;
+                hero.style.setProperty('--nyb-bg-scale', bgScale.toFixed(4));
 
                 if (state === 'scroll') {
                     hero.style.setProperty('--nyb-unit-scale',    unitScale.toFixed(4));
@@ -877,19 +845,15 @@
                 }
 
                 const dn = progress > prevProgress;
-                const up = progress < prevProgress;
 
                 // Forward trigger: scroll → sec 0, or pinned at sec N → sec N+1.
                 if (dn && (state === 'scroll' || state === 'pinned')) {
                     const nextSec = activeSec + 1;
                     if (nextSec < SECTIONS.length &&
                         prevProgress < TRIGGERS[nextSec] && progress >= TRIGGERS[nextSec]) {
-                        snapShiftX     = phoneShiftX;
-                        snapBezelW     = bezelW;
-                        snapTextPanelX = textPanelX;
-                        snapCopyT0     = copyT0;
-                        snapCopyT1     = copyT1;
-                        snapCopyT2     = copyT2;
+                        snapShiftX = phoneShiftX;
+                        snapBezelW = bezelW;
+                        snapCopyT0 = copyT0;
                         flipPhone(true);
                     }
                 }
@@ -900,43 +864,54 @@
                 if (state === 'pinned') {
                     const curSec = activeSec;
                     if (curSec >= 0 && progress < TRIGGERS_BK[curSec]) {
-                        snapShiftX     = phoneShiftX;
-                        snapBezelW     = bezelW;
-                        snapTextPanelX = textPanelX;
-                        snapCopyT0     = copyT0;
-                        snapCopyT1     = copyT1;
-                        snapCopyT2     = copyT2;
+                        snapShiftX = phoneShiftX;
+                        snapBezelW = bezelW;
+                        snapCopyT0 = copyT0;
                         flipPhone(false);
                     }
                 }
 
                 prevProgress = progress;
 
-                // Drive scroll state
-                if (state === 'scroll' && !animRafId) {
-                    hero.style.setProperty('--nyb-copy-x',      `${textPanelX.toFixed(1)}px`);
-                    hero.style.setProperty('--nyb-unit-dx',      `${(-phoneShiftX).toFixed(1)}px`);
-                    hero.style.setProperty('--nyb-copy-t0',      copyT0.toFixed(4));
-                    hero.style.setProperty('--nyb-copy-t1',      copyT1.toFixed(4));
-                    hero.style.setProperty('--nyb-copy-t2',      copyT2.toFixed(4));
+                // Drive scroll & restored states (active slot tracks live phone dx).
+                if ((state === 'scroll' || state === 'restored') && !animRafId) {
+                    const liveShiftX = state === 'scroll' ? phoneShiftX : snapShiftX;
+                    const liveBezelW = state === 'scroll' ? bezelW       : snapBezelW;
+                    const liveOpc    = state === 'scroll' ? copyT0       : snapCopyT0;
+                    const phoneDx    = -liveShiftX;
+                    const data       = sectionData(activeSec);
+                    const restX      = cardAnchor(phoneDx, liveBezelW, data.position);
+
+                    hero.style.setProperty('--nyb-unit-dx',      `${phoneDx.toFixed(1)}px`);
+                    hero.style.setProperty('--nyb-bg-x',         `${(phoneDx * BG_PARALLAX).toFixed(2)}px`);
                     hero.style.setProperty('--nyb-bike-opacity', '0');
                     hero.style.setProperty('--nyb-phone-roty',   '0deg');
-                    hero.style.setProperty('--nyb-flipped-t',    '0');
-                } else if (state === 'restored') {
-                    hero.style.setProperty('--nyb-copy-x',       `${snapTextPanelX.toFixed(1)}px`);
-                    hero.style.setProperty('--nyb-unit-dx',       `${(-snapShiftX).toFixed(1)}px`);
-                    hero.style.setProperty('--nyb-copy-t0',       snapCopyT0.toFixed(4));
-                    hero.style.setProperty('--nyb-copy-t1',       snapCopyT1.toFixed(4));
-                    hero.style.setProperty('--nyb-copy-t2',       snapCopyT2.toFixed(4));
-                    hero.style.setProperty('--nyb-bike-opacity',  '0');
-                    hero.style.setProperty('--nyb-phone-roty',    '0deg');
-                    hero.style.setProperty('--nyb-flipped-t',     '0');
+                    hero.style.setProperty('--nyb-phone-rotz',   '0deg');
+
+                    setSlot(activeSlotIdx,     restX, liveOpc);
+                    setSlot(1 - activeSlotIdx, 0,     0);
                 }
             }
 
             window.addEventListener('resize', () => { cacheHeroAbsTop(); updateHero(); });
 
-            // Init: seed vScroll from actual browser scroll in case of mid-page load.
+            // Preload every image the flip will swap to (screen art + card
+            // icons). Browser caches the bytes so the mid-flip src swap is
+            // instantaneous instead of triggering a network round-trip.
+            (function preloadAll() {
+                const urls = new Set();
+                const visit = data => {
+                    if (data.screenSrc) urls.add(data.screenSrc);
+                    if (data.icon && data.icon.src) urls.add(data.icon.src);
+                };
+                visit(INTRO);
+                SECTIONS.forEach(visit);
+                urls.forEach(src => { const img = new Image(); img.src = src; });
+            })();
+
+            // Init: seed vScroll from actual browser scroll in case of mid-page load,
+            // and pre-render the intro into the active slot (slot 0).
+            populateSlot(0, -1);
             cacheHeroAbsTop();
             vScroll = clamp(window.scrollY - heroAbsTop, 0, getTotal());
             updateHero();

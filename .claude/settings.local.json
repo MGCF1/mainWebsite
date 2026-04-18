@@ -9,7 +9,10 @@
       "Bash(lsof:*)",
       "Bash(curl:*)",
       "Bash(xargs kill:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(sed '1d;$d')",
+      "Bash(node --check /tmp/nyb-script.js)",
+      "Bash(awk '/<script>/,/<\\\\/script>/' projects/nybiker.html)"
     ]
   }
 }
