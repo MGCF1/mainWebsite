@@ -1,0 +1,31 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["YU4T7XHLGR.com.mgcf1.commuter"],
+        "components": [
+          { "/": "/nybiker*", "comment": "NYBiker deep links" }
+        ]
+      },
+      {
+        "appIDs": ["YU4T7XHLGR.com.mgcf1.divvy"],
+        "components": [
+          { "/": "/divvy*", "comment": "Divvy deep links" }
+        ]
+      },
+      {
+        "appIDs": ["YU4T7XHLGR.com.MGCF1.invoicing"],
+        "components": [
+          { "/": "/quickvo*", "comment": "QuickVo deep links" }
+        ]
+      }
+    ]
+  },
+  "appclips": {
+    "apps": [
+      "YU4T7XHLGR.com.mgcf1.commuter.Clip",
+      "YU4T7XHLGR.com.mgcf1.divvy.Clip",
+      "YU4T7XHLGR.com.MGCF1.invoicing.Clip"
+    ]
+  }
+}
