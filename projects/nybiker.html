@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-itunes-app" content="app-id=6740424241, app-clip-bundle-id=com.mgcf1.commuter.Clip">
     <title>NYBiker - Milo Cassarino</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/project.css">
@@ -60,7 +61,7 @@
                down the phone (near the bottom) — makes the top swing further
                for the same angle, emphasising the "flung by the top" feel.
                rotateY and scale continue to pivot at center. */
-            transform: translate(calc(-50% + var(--nyb-unit-dx, 0px)), -50%) scale(var(--nyb-unit-scale, 1)) rotateY(var(--nyb-phone-roty, 0deg)) translate(0, 30%) rotateZ(var(--nyb-phone-rotz, 0deg)) translate(0, -30%);
+            transform: translate(calc(-50% + var(--nyb-unit-dx, 0px)), calc(-50% + var(--nyb-unit-dy, 0px))) scale(var(--nyb-unit-scale, 1)) rotateY(var(--nyb-phone-roty, 0deg)) translate(0, 30%) rotateZ(var(--nyb-phone-rotz, 0deg)) translate(0, -30%);
             transform-origin: center center;
             transform-style: preserve-3d;
             will-change: transform;
@@ -191,8 +192,9 @@
         .nyb-feature-title:empty { display: none; }
 
         .nyb-feature-body {
-            font-size: clamp(16px, 1.8vw, 22px);
-            color: rgba(245,245,247,0.6);
+            font-size: clamp(18px, 2.1vw, 26px);
+            font-weight: 500;
+            color: rgba(245,245,247,0.72);
             margin: 0 0 28px;
             line-height: 1.4;
         }
@@ -208,14 +210,60 @@
         }
         .nyb-feature-list:empty { display: none; }
         .nyb-feature-list li {
-            font-size: clamp(16px, 1.8vw, 22px);
+            font-size: clamp(18px, 2.1vw, 26px);
+            font-weight: 500;
             color: rgba(245,245,247,0.6);
             line-height: 1.55;
         }
 
         .nyb-feature-cta:empty { display: none; }
 
+        /* ── App Clip QR — fixed bottom-right (desktop only) ─────────── */
+        .nyb-qr-widget {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 999;
+            background: rgba(255,255,255,0.78);
+            backdrop-filter: blur(20px) saturate(1.6);
+            -webkit-backdrop-filter: blur(20px) saturate(1.6);
+            border: 1px solid rgba(255,255,255,0.65);
+            border-radius: 20px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.14);
+        }
+
+        .nyb-appclip-text {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .nyb-appclip-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1d1d1f;
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        .nyb-appclip-sublabel {
+            font-size: 11px;
+            color: rgba(0,0,0,0.45);
+            margin: 0;
+            line-height: 1.4;
+            white-space: nowrap;
+            text-align: center;
+        }
+
         @media (max-width: 768px) {
+            .nyb-qr-widget { display: none; }
+
             /* Shift phone toward the top — bottom edge sits at nav + 30px + phoneHeight */
             .nyb-phone-unit {
                 top: calc(var(--nav-height) + 30px + var(--nyb-unit-h) / 2);
@@ -304,9 +352,13 @@
         </div>
     </section>
 
-    <footer class="footer">
-        <p>&copy; 2026 Milo Cassarino. All rights reserved.</p>
-    </footer>
+    <div class="nyb-qr-widget">
+        <div class="nyb-appclip-text">
+            <p class="nyb-appclip-label">Try App Clip</p>
+            <p class="nyb-appclip-sublabel">Scan to open instantly</p>
+        </div>
+        <div id="nyb-qr"></div>
+    </div>
 
     <svg width="0" height="0" style="position:absolute">
         <defs>
@@ -316,6 +368,22 @@
         </defs>
     </svg>
 
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        (function () {
+            const qrEl = document.getElementById('nyb-qr');
+            if (qrEl) {
+                new QRCode(qrEl, {
+                    text: 'https://appclip.apple.com/id?p=com.mgcf1.commuter.Clip',
+                    width: 128,
+                    height: 128,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M,
+                });
+            }
+        })();
+    </script>
     <script>
         (function () {
             const hero = document.getElementById('nybScrollHero');
@@ -449,7 +517,7 @@
                 position:  'right',
                 bikeLtr:   true,
                 screenSrc: '../images/ProjectImgs/NYBiker/HeroHeader.PNG',
-                cta:       { label: 'Download on App Store', href: 'https://apps.apple.com/us/app/nybiker/id6740424241' },
+                cta:       null,
             };
 
             const SECTIONS = [
@@ -621,7 +689,10 @@
                 const toDx   = isMobile ? 0 : getPhoneDx(toSec);
 
                 const dir    = Math.sign(toDx - fromDx);       // +1 R, -1 L, 0 mobile
-                const rotDir = toDx >= fromDx ? -1 : 1;         // spin direction matches travel
+                // On mobile there's no horizontal travel so derive spin direction from intent
+                const rotDir = isMobile
+                    ? (animFwd ? -1 : 1)
+                    : (toDx >= fromDx ? -1 : 1);
 
                 // ── Timeline ───────────────────────────────────────────────
                 // Phase A (0 → PEAK_POINT): phone flies from fromDx all the
@@ -669,7 +740,7 @@
                 // starts swinging from the top once the bike is on screen.
                 const tiltGateRaw   = Math.max(0, Math.min(1, (t - TILT_DELAY) / TILT_RAMP));
                 const tiltGate      = tiltGateRaw * tiltGateRaw * (3 - 2 * tiltGateRaw);
-                const rotZ = phaseVelPeak > 0
+                let rotZ = phaseVelPeak > 0
                     ? (velX / phaseVelPeak) * tiltCoef * tiltGate
                     : 0;
 
@@ -679,19 +750,54 @@
                 // Linear remap per phase preserves C¹ continuity at the peak
                 // because position velocity is 0 there.
                 const SPIN_OVERSHOOT = 0.03; // 3% → ~11° past 360°
-                const posProgress = flightDist > 0
-                    ? (curDx - fromDx) * dir / flightDist
-                    : 0;
                 const peakSpin    = 1 + SPIN_OVERSHOOT;
                 let spinFrac;
-                if (t < PEAK_POINT) {
-                    // posProgress: 0 → (1 + OVERSHOOT_RATIO); map to 0 → peakSpin
-                    spinFrac = posProgress / (1 + OVERSHOOT_RATIO) * peakSpin;
+                if (isMobile) {
+                    // No horizontal travel on mobile — drive spin purely from time
+                    // Phase A: smoothstep 0 → peakSpin; Phase B: settle peakSpin → 1
+                    if (t < PEAK_POINT) {
+                        const p = t / PEAK_POINT;
+                        spinFrac = p * p * (3 - 2 * p) * peakSpin;
+                    } else {
+                        const p = (t - PEAK_POINT) / (1 - PEAK_POINT);
+                        spinFrac = peakSpin + (1 - peakSpin) * p * p * (3 - 2 * p);
+                    }
                 } else {
-                    // posProgress: (1 + OVERSHOOT_RATIO) → 1; map to peakSpin → 1
-                    spinFrac = 1 + (posProgress - 1) / OVERSHOOT_RATIO * SPIN_OVERSHOOT;
+                    const posProgress = flightDist > 0
+                        ? (curDx - fromDx) * dir / flightDist
+                        : 0;
+                    if (t < PEAK_POINT) {
+                        spinFrac = posProgress / (1 + OVERSHOOT_RATIO) * peakSpin;
+                    } else {
+                        spinFrac = 1 + (posProgress - 1) / OVERSHOOT_RATIO * SPIN_OVERSHOOT;
+                    }
                 }
                 const phoneRotY = rotDir * 360 * spinFrac;
+
+                // Mobile horizontal overshoot: center → slight offset → center.
+                // Also drives rotZ tilt since velX/phaseVelPeak are both 0 on mobile.
+                const MOBILE_OVERSHOOT_PX = 36;
+                let mobileOvershootDx = 0;
+                if (isMobile) {
+                    const flingDir = animBikeLtr ? 1 : -1;
+                    let mVel, mPeakVel, mTiltCoef;
+                    if (t < PEAK_POINT) {
+                        const p = t / PEAK_POINT;
+                        const sprim = 6 * p * (1 - p) / PEAK_POINT;
+                        mobileOvershootDx = flingDir * MOBILE_OVERSHOOT_PX * p * p * (3 - 2 * p);
+                        mVel      = flingDir * MOBILE_OVERSHOOT_PX * sprim;
+                        mPeakVel  = MOBILE_OVERSHOOT_PX * 1.5 / PEAK_POINT;
+                        mTiltCoef = MAX_TILT_DEG;
+                    } else {
+                        const p = (t - PEAK_POINT) / (1 - PEAK_POINT);
+                        const sprim = 6 * p * (1 - p) / (1 - PEAK_POINT);
+                        mobileOvershootDx = flingDir * MOBILE_OVERSHOOT_PX * (1 - p * p * (3 - 2 * p));
+                        mVel      = -flingDir * MOBILE_OVERSHOOT_PX * sprim;
+                        mPeakVel  = MOBILE_OVERSHOOT_PX * 1.5 / (1 - PEAK_POINT);
+                        mTiltCoef = MAX_TILT_DEG * RETURN_TILT_RATIO;
+                    }
+                    rotZ = mPeakVel > 0 ? (mVel / mPeakVel) * mTiltCoef * tiltGate : 0;
+                }
 
                 // Bike crossing stays time-driven (easeIO over the flight phase)
                 // so it doesn't inherit the phone's overshoot.
@@ -731,7 +837,7 @@
                 setSlot(fromIdx, fromAnchor + fromSlideX, fadeOut * fromMax);
                 setSlot(toIdx,   toAnchor   + toSlideX,   fadeIn  * toMax);
 
-                hero.style.setProperty('--nyb-unit-dx',      `${curDx.toFixed(1)}px`);
+                hero.style.setProperty('--nyb-unit-dx',      `${(isMobile ? mobileOvershootDx : curDx).toFixed(1)}px`);
                 hero.style.setProperty('--nyb-phone-roty',    `${phoneRotY.toFixed(1)}deg`);
                 hero.style.setProperty('--nyb-phone-rotz',    `${rotZ.toFixed(2)}deg`);
                 hero.style.setProperty('--nyb-bike-x',        `${bikeX.toFixed(1)}px`);
@@ -756,6 +862,7 @@
                 hero.style.setProperty('--nyb-bike-opacity',  '0');
                 hero.style.setProperty('--nyb-phone-roty',    '0deg');
                 hero.style.setProperty('--nyb-phone-rotz',    '0deg');
+                hero.style.setProperty('--nyb-unit-dy',       '0px');
 
                 // The "to" slot is now the active one. Swap our pointer.
                 activeSlotIdx = 1 - activeSlotIdx;
@@ -887,6 +994,7 @@
                     hero.style.setProperty('--nyb-bike-opacity', '0');
                     hero.style.setProperty('--nyb-phone-roty',   '0deg');
                     hero.style.setProperty('--nyb-phone-rotz',   '0deg');
+                    hero.style.setProperty('--nyb-unit-dy',      '0px');
 
                     setSlot(activeSlotIdx,     restX, liveOpc);
                     setSlot(1 - activeSlotIdx, 0,     0);
