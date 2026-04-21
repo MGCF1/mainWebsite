@@ -1,0 +1,101 @@
+window.projectsData = [
+    {
+        "id": "vestr",
+        "name": "Vestr",
+        "description": "Investment tracking and portfolio management",
+        "icon": "images/Icons/Vestr_Icon.png",
+        "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        "url": "https://apps.apple.com/us/app/vestr/id1617856969",
+        "external": true
+    },
+    {
+        "id": "shortform",
+        "name": "ShortForm",
+        "description": "Short show by real people",
+        "icon": "images/Icons/ShortForm.png",
+        "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        "url": "https://apps.apple.com/us/app/shortform-series/id6758223361",
+        "external": true
+    },
+    {
+        "id": "podium",
+        "name": "Podium",
+        "description": "Sports performance tracking",
+        "icon": "images/Icons/Podium_Icon.png",
+        "gradient": "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+        "url": "https://www.zohealth.io",
+        "external": true
+    },
+    {
+        "id": "nybiker",
+        "name": "NYBiker",
+        "description": "NYC cycling route planner",
+        "icon": "images/Icons/NYBiker_Icon.png",
+        "gradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+        "url": "/projects/NYBiker",
+        "external": true
+    },
+    {
+        "id": "divvy",
+        "name": "Divvy",
+        "description": "Expense splitting made easy",
+        "icon": "images/Icons/Divvy_Icon.png",
+        "gradient": "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+        "url": "https://divvy.mgcf1.com",
+        "external": true
+    },
+    {
+        "id": "adesso",
+        "name": "Adesso",
+        "description": "Time management and productivity",
+        "icon": "images/Icons/Adesso_Icon.png",
+        "gradient": "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+        "url": "https://apps.apple.com/us/app/myadesso/id6497954262",
+        "external": true
+    },
+    {
+        "id": "chaski",
+        "name": "Chaski",
+        "description": "Messaging and communication",
+        "icon": "images/Icons/Chaski_Icon.png",
+        "gradient": "linear-gradient(135deg, #30cfd0 0%, #330867 100%)",
+        "url": "https://ciclo.tech",
+        "external": true
+    },
+    {
+        "id": "condor",
+        "name": "Condor",
+        "description": "Flight tracking and travel",
+        "icon": "images/Icons/Condor_Icon.png",
+        "gradient": "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
+        "url": "https://ciclo.tech",
+        "external": true
+    },
+    {
+        "id": "hubhyve",
+        "name": "HubHyve",
+        "description": "Community and collaboration",
+        "icon": "images/Icons/HubHyve_Icon.jpg",
+        "gradient": "linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%)",
+        "url": "https://apps.apple.com/us/app/hub-hyve/id6447258194",
+        "external": true
+    },
+    {
+        "id": "listo",
+        "name": "Listo",
+        "description": "Smart task management",
+        "icon": "images/Icons/Listo_Icon.png",
+        "gradient": "linear-gradient(135deg, #ee9ca7 0%, #ffdde1 100%)",
+        "url": "https://ciclo.tech",
+        "external": true
+    },
+    {
+        "id": "quickvo",
+        "name": "QuickVo",
+        "description": "Voice notes and transcription",
+        "icon": "images/Icons/QuickVo_Icon.png",
+        "gradient": "linear-gradient(135deg, #2af598 0%, #009efd 100%)",
+        "url": "https://apps.apple.com/us/app/quickvo/id6698862077",
+        "external": true
+    }
+];

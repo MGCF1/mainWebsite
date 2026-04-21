@@ -5,7 +5,16 @@ window.highlightsData = [
     "subtitle": "Completely redesigned uniquely incorperating liquid glass.",
     "backgroundImage": "images/Highlights/NYBikeriOS26.png",
     "backgroundGradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-    "link": "https://apps.apple.com/us/app/nybiker/id6740424241",
+    "link": "projects/nybiker.html",
+    "cta": "View"
+  },
+  {
+    "caption": "App Launch",
+    "title": "ShortForm",
+    "subtitle": "Short shows by real people",
+    "backgroundImage": "images/Highlights/ShortForm.png",
+    "backgroundGradient": "linear-gradient(135deg, #30cfd0 0%, #330867 100%)",
+    "link": "https://apps.apple.com/us/app/shortform-series/id6758223361",
     "cta": "App Store"
   },
   {
@@ -27,15 +36,6 @@ window.highlightsData = [
     "cta": "App Store"
   },
   {
-    "caption": "App Launch",
-    "title": "Adesso",
-    "subtitle": "A new iOS app designed to simplify your daily workflow.",
-    "backgroundImage": "images/Highlights/Adesso.png",
-    "backgroundGradient": "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-    "link": "https://apps.apple.com/us/app/myadesso/id6497954262",
-    "cta": "App Store"
-  },
-  {
     "caption": "Coming Soon",
     "title": "Divvy",
     "subtitle": "Sign up for early access to our upcoming app.",
@@ -45,12 +45,12 @@ window.highlightsData = [
     "cta": "Waitlist"
   },
   {
-    "caption": "Career",
-    "title": "Joined ShortForm",
-    "subtitle": "Became part of the ShortForm development team.",
-    "backgroundImage": "images/Highlights/ShortForm.png",
-    "backgroundGradient": "linear-gradient(135deg, #30cfd0 0%, #330867 100%)",
-    "link": "https://www.shortformgala.com",
-    "cta": "View"
+    "caption": "App Launch",
+    "title": "Adesso",
+    "subtitle": "A new iOS app designed to simplify your daily workflow.",
+    "backgroundImage": "images/Highlights/Adesso.png",
+    "backgroundGradient": "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+    "link": "https://apps.apple.com/us/app/myadesso/id6497954262",
+    "cta": "App Store"
   }
 ];
