@@ -9,6 +9,15 @@
         "external": true
     },
     {
+        "id": "shortform",
+        "name": "ShortForm",
+        "description": "Short show by real people",
+        "icon": "images/Icons/ShortForm.png",
+        "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        "url": "https://apps.apple.com/us/app/shortform-series/id6758223361",
+        "external": true
+    },
+    {
         "id": "podium",
         "name": "Podium",
         "description": "Sports performance tracking",

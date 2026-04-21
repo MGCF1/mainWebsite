@@ -16,7 +16,10 @@
       "Bash(ipconfig getifaddr *)",
       "mcp__Claude_Preview__preview_start",
       "Skill(update-config)",
-      "Skill(update-config:*)"
+      "Skill(update-config:*)",
+      "Bash(gh pr create --title 'NYBiker mobile UX overhaul + animation polish' --body ' *)",
+      "Bash(brew list *)",
+      "Bash(/opt/homebrew/bin/gh pr create --title 'NYBiker mobile UX overhaul + animation polish' --body ' *)"
     ]
   }
 }
