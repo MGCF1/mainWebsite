@@ -23,7 +23,7 @@
         "description": "NYC cycling route planner",
         "icon": "images/Icons/NYBiker_Icon.png",
         "gradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-        "url": "https://apps.apple.com/us/app/nybiker/id6740424241",
+        "url": "/projects/NYBiker",
         "external": true
     },
     {
