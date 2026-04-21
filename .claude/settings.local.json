@@ -12,7 +12,11 @@
       "Bash(node -e:*)",
       "Bash(sed '1d;$d')",
       "Bash(node --check /tmp/nyb-script.js)",
-      "Bash(awk '/<script>/,/<\\\\/script>/' projects/nybiker.html)"
+      "Bash(awk '/<script>/,/<\\\\/script>/' projects/nybiker.html)",
+      "Bash(ipconfig getifaddr *)",
+      "mcp__Claude_Preview__preview_start",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
     ]
   }
 }

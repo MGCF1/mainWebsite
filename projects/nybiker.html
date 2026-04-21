@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="apple-itunes-app" content="app-id=6740424241, app-clip-bundle-id=com.mgcf1.commuter.Clip">
-    <title>NYBiker - Milo Cassarino</title>
+<title>NYBiker - Milo Cassarino</title>
     <link rel="stylesheet" href="../css/styles.css">
     <link rel="stylesheet" href="../css/project.css">
     <style>
         .nyb-scroll-hero {
             position: relative;
-            margin-top: var(--nav-height);
+            margin-top: 0;
             height: 620vh;
         }
 
@@ -32,7 +31,7 @@
         .nyb-bg {
             position: absolute;
             inset: 0;
-            background: url('../images/ProjectImgs/NYBiker/WSPPhoto.png') center / cover no-repeat;
+            background: url('https://pub-1db3d71dc33e41f1967dda930c64bae5.r2.dev/WSPPhoto.png') center / cover no-repeat;
             transform: translate3d(var(--nyb-bg-x, 0px), 0, 0) scale(var(--nyb-bg-scale, 1.1));
             transform-origin: center center;
             will-change: transform;
@@ -261,6 +260,10 @@
             text-align: center;
         }
 
+        .nyb-preview-btn {
+            display: none;
+        }
+
         @media (max-width: 768px) {
             .nyb-qr-widget { display: none; }
 
@@ -269,11 +272,39 @@
                 top: calc(var(--nav-height) + 30px + var(--nyb-unit-h) / 2);
             }
 
+            /* Bike crosses at the upper quarter of the phone instead of screen center */
+            .nyb-bike {
+                top: calc(var(--nav-height) + 30px + var(--nyb-unit-h) * 0.28);
+            }
+
+            .nyb-preview-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: fixed;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%) translateY(32px);
+                opacity: 0;
+                z-index: 999;
+                background: #007AFF;
+                color: #fff;
+                font-size: 17px;
+                font-weight: 600;
+                letter-spacing: -0.01em;
+                padding: 10px 32px;
+                border-radius: 100px;
+                text-decoration: none;
+                white-space: nowrap;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.22), 0 0 18px rgba(0, 122, 255, 0.5);
+                will-change: transform, opacity;
+            }
+
             /* Cards: stack centred below the phone */
             .nyb-feature-card {
                 top: calc(var(--nav-height) + 30px + var(--nyb-unit-h) + 20px) !important;
                 left: 50% !important;
-                transform: translate(calc(-50% + var(--card-x, 0px)), 0) !important;
+                transform: translate(calc(-50% + var(--card-x, 0px)), var(--card-y, 0px)) !important;
                 text-align: center !important;
                 align-items: center !important;
                 width: 90vw;
@@ -309,12 +340,6 @@
         </div>
     </nav>
 
-    <div class="back-nav">
-        <a href="../index.html#projects" class="back-link">
-            <span>&larr;</span> Back to Projects
-        </a>
-    </div>
-
     <section class="nyb-scroll-hero" id="nybScrollHero">
         <div class="nyb-scroll-stage">
             <div class="nyb-bg" aria-hidden="true"></div>
@@ -342,7 +367,7 @@
                 <div class="nyb-phone-unit">
                     <div class="nyb-map-viewport">
                         <div class="nyb-map-surface">
-                            <img class="nyb-map-image nyb-screen-img" src="../images/ProjectImgs/NYBiker/HeroHeader.PNG" alt="NYBiker screen">
+                            <img class="nyb-map-image nyb-screen-img" src="https://pub-1db3d71dc33e41f1967dda930c64bae5.r2.dev/HeroHeader.PNG" alt="NYBiker screen">
                         </div>
                     </div>
                     <img class="nyb-phone-bezel" src="../images/Phone/PhoneBezel.png" alt="Phone bezel framing the map">
@@ -359,6 +384,10 @@
         </div>
         <div id="nyb-qr"></div>
     </div>
+
+    <a class="nyb-preview-btn" href="https://appclip.apple.com/id?p=com.mgcf1.commuter.Clip" target="_blank" rel="noopener noreferrer">
+        Preview
+    </a>
 
     <svg width="0" height="0" style="position:absolute">
         <defs>
@@ -454,21 +483,67 @@
                 applyDelta(normaliseDelta(e));
             }
 
-            let touchStartY = 0;
+            let touchStartY   = 0;
+            let touchGestureY = 0; // finger Y at gesture start (for total-distance calc)
+            let touchLastY    = 0;
+            let touchLastTime = 0;
+            let touchVelY     = 0; // px/ms, positive = swiping up
+
             function onTouchStart(e) {
-                touchStartY = e.touches[0].clientY;
+                touchStartY   = e.touches[0].clientY;
+                touchGestureY = e.touches[0].clientY;
+                touchLastY    = e.touches[0].clientY;
+                touchLastTime = performance.now();
+                touchVelY     = 0;
                 if (window.scrollY >= heroAbsTop) syncVScrollFromBrowser();
             }
             function onTouchMove(e) {
                 if (window.scrollY < heroAbsTop) return;
+                const isMob = window.innerWidth <= 768;
+
+                // Track velocity so touchend has accurate data regardless of state.
+                const now = performance.now();
+                const dt  = now - touchLastTime;
+                if (dt > 0) touchVelY = (touchLastY - e.touches[0].clientY) / dt;
+                touchLastY    = e.touches[0].clientY;
+                touchLastTime = now;
+
+                if (state === 'animating') { e.preventDefault(); return; }
+
+                // On mobile at a feature section: consume the touch but don't
+                // accumulate vScroll — the section transition fires from touchend.
+                if (isMob && state === 'pinned') { e.preventDefault(); return; }
+
                 const total    = getTotal();
-                const dy       = touchStartY - e.touches[0].clientY; // +ve = down
+                const dy       = touchStartY - e.touches[0].clientY;
                 touchStartY    = e.touches[0].clientY;
                 const atBottom = vScroll >= total;
                 const atTop    = vScroll <= 0;
                 if ((atBottom && dy > 0) || (atTop && dy < 0)) return;
                 e.preventDefault();
-                applyDelta(dy * 1.5);
+                applyDelta(dy * (isMob ? 3.5 : 1.5));
+            }
+            function onTouchEnd() {
+                if (window.innerWidth > 768) return;
+                if (state !== 'pinned') return;
+
+                const totalDist = touchGestureY - touchLastY; // +ve = swipe up
+                const SWIPE_VEL  = 0.25; // px/ms
+                const SWIPE_DIST = 40;   // px
+
+                const goFwd = touchVelY >  SWIPE_VEL || totalDist >  SWIPE_DIST;
+                const goBwd = touchVelY < -SWIPE_VEL || totalDist < -SWIPE_DIST;
+                if (!goFwd && !goBwd) return;
+
+                const vw      = window.innerWidth;
+                const phoneW  = Math.min(vw * 0.52, 220);
+                const bezelW  = phoneW * 1.1145;
+                snapShiftX = 0;
+                snapBezelW = bezelW;
+                snapCopyT0 = 1; // always past intro when pinned
+
+                if (goFwd && activeSec + 1 < SECTIONS.length) flipPhone(true);
+                else if (goBwd)                                flipPhone(false);
             }
 
             function onKeyDown(e) {
@@ -489,6 +564,7 @@
             window.addEventListener('wheel',      onWheel,      { passive: false });
             window.addEventListener('touchstart', onTouchStart, { passive: true  });
             window.addEventListener('touchmove',  onTouchMove,  { passive: false });
+            window.addEventListener('touchend',   onTouchEnd,   { passive: true  });
             window.addEventListener('keydown',    onKeyDown);
 
             // ─────────────────────────────────────────────────────────────────
@@ -516,7 +592,7 @@
                 icon:      { src: '../images/Icons/NYBiker_Icon.png', alt: 'NYBiker app icon' },
                 position:  'right',
                 bikeLtr:   true,
-                screenSrc: '../images/ProjectImgs/NYBiker/HeroHeader.PNG',
+                screenSrc: 'https://pub-1db3d71dc33e41f1967dda930c64bae5.r2.dev/HeroHeader.PNG',
                 cta:       null,
             };
 
@@ -528,7 +604,7 @@
                     icon:      { emoji: '📍' },
                     position:  'left',
                     bikeLtr:   true,
-                    screenSrc: '../images/ProjectImgs/NYBiker/StationDetails.PNG',
+                    screenSrc: 'https://pub-1db3d71dc33e41f1967dda930c64bae5.r2.dev/StationDetails.PNG',
                 },
                 {
                     title:     'Advanced Filters',
@@ -537,7 +613,7 @@
                     icon:      { emoji: '🎛️' },
                     position:  'right',
                     bikeLtr:   false,
-                    screenSrc: '../images/ProjectImgs/NYBiker/AdvancedFilters.PNG',
+                    screenSrc: 'https://pub-1db3d71dc33e41f1967dda930c64bae5.r2.dev/AdvancedFilters.png',
                 },
                 {
                     title:     'Going Somewhere?',
@@ -546,7 +622,7 @@
                     icon:      { emoji: '🧭' },
                     position:  'left',
                     bikeLtr:   true,
-                    screenSrc: '../images/ProjectImgs/NYBiker/GoingSomewhere.PNG',
+                    screenSrc: 'https://pub-1db3d71dc33e41f1967dda930c64bae5.r2.dev/GoingSomewhere.png',
                 },
                 {
                     title:     'Free',
@@ -555,7 +631,7 @@
                     icon:      { emoji: '🎉' },
                     position:  'right',
                     bikeLtr:   false,
-                    screenSrc: '../images/ProjectImgs/NYBiker/Free.PNG',
+                    screenSrc: 'https://pub-1db3d71dc33e41f1967dda930c64bae5.r2.dev/Free.png',
                 },
             ];
 
@@ -591,7 +667,8 @@
             // at whichever currently shows activeSec; the other is parked at
             // opacity 0 (or pre-rendered with the destination section while a
             // flip is mid-flight).
-            const slots = Array.from(hero.querySelectorAll('.nyb-feature-card'));
+            const slots      = Array.from(hero.querySelectorAll('.nyb-feature-card'));
+            const previewBtn = document.querySelector('.nyb-preview-btn');
             let activeSlotIdx = 0;
 
             // Width of a feature card in the current viewport. Mirrors the
@@ -637,9 +714,10 @@
                 }
             }
 
-            function setSlot(idx, x, opacity) {
+            function setSlot(idx, x, opacity, y = 0) {
                 const slot = slots[idx];
                 slot.style.setProperty('--card-x',       `${x.toFixed(1)}px`);
+                slot.style.setProperty('--card-y',       `${y.toFixed(1)}px`);
                 slot.style.setProperty('--card-opacity', opacity.toFixed(4));
             }
 
@@ -691,7 +769,7 @@
                 const dir    = Math.sign(toDx - fromDx);       // +1 R, -1 L, 0 mobile
                 // On mobile there's no horizontal travel so derive spin direction from intent
                 const rotDir = isMobile
-                    ? (animFwd ? -1 : 1)
+                    ? (animBikeLtr ? -1 : 1)
                     : (toDx >= fromDx ? -1 : 1);
 
                 // ── Timeline ───────────────────────────────────────────────
@@ -753,14 +831,14 @@
                 const peakSpin    = 1 + SPIN_OVERSHOOT;
                 let spinFrac;
                 if (isMobile) {
-                    // No horizontal travel on mobile — drive spin purely from time
-                    // Phase A: smoothstep 0 → peakSpin; Phase B: settle peakSpin → 1
+                    // Mobile gets a larger Y-spin overshoot for a more dramatic flip.
+                    const mobPeakSpin = 1.14; // ~50° past 360° before settling
                     if (t < PEAK_POINT) {
                         const p = t / PEAK_POINT;
-                        spinFrac = p * p * (3 - 2 * p) * peakSpin;
+                        spinFrac = p * p * (3 - 2 * p) * mobPeakSpin;
                     } else {
                         const p = (t - PEAK_POINT) / (1 - PEAK_POINT);
-                        spinFrac = peakSpin + (1 - peakSpin) * p * p * (3 - 2 * p);
+                        spinFrac = mobPeakSpin + (1 - mobPeakSpin) * p * p * (3 - 2 * p);
                     }
                 } else {
                     const posProgress = flightDist > 0
@@ -774,34 +852,44 @@
                 }
                 const phoneRotY = rotDir * 360 * spinFrac;
 
-                // Mobile horizontal overshoot: center → slight offset → center.
-                // Also drives rotZ tilt since velX/phaseVelPeak are both 0 on mobile.
-                const MOBILE_OVERSHOOT_PX = 36;
+                // Mobile horizontal swing: arcs to one side (Phase A, smoothstep,
+                // overshooting the halfway mark by OVERSHOOT_RATIO), then springs
+                // back through centre with a subtle undershoot (Phase B, easeOutBack).
+                // Reuses OVERSHOOT_RATIO and the same tilt mechanism as desktop.
+                const MOBILE_SWING_PX  = 100;
+                const MOB_SWING_PEAK   = 0.44; // Phase A ends here; Phase B gets the rest
                 let mobileOvershootDx = 0;
                 if (isMobile) {
-                    const flingDir = animBikeLtr ? 1 : -1;
+                    const flingDir  = animBikeLtr ? 1 : -1;
+                    const swingPeak = flingDir * MOBILE_SWING_PX * (1 + OVERSHOOT_RATIO);
                     let mVel, mPeakVel, mTiltCoef;
-                    if (t < PEAK_POINT) {
-                        const p = t / PEAK_POINT;
-                        const sprim = 6 * p * (1 - p) / PEAK_POINT;
-                        mobileOvershootDx = flingDir * MOBILE_OVERSHOOT_PX * p * p * (3 - 2 * p);
-                        mVel      = flingDir * MOBILE_OVERSHOOT_PX * sprim;
-                        mPeakVel  = MOBILE_OVERSHOOT_PX * 1.5 / PEAK_POINT;
-                        mTiltCoef = MAX_TILT_DEG;
+
+                    if (t < MOB_SWING_PEAK) {
+                        // Phase A: 0 → swingPeak (smoothstep, overshoot baked in)
+                        const p      = t / MOB_SWING_PEAK;
+                        const sstep  = p * p * (3 - 2 * p);
+                        const ssprim = 6 * p * (1 - p) / MOB_SWING_PEAK;
+                        mobileOvershootDx = swingPeak * sstep;
+                        mVel      = swingPeak * ssprim;
+                        mPeakVel  = Math.abs(swingPeak) * 1.5 / MOB_SWING_PEAK;
+                        mTiltCoef = MAX_TILT_DEG * 2.5;
                     } else {
-                        const p = (t - PEAK_POINT) / (1 - PEAK_POINT);
-                        const sprim = 6 * p * (1 - p) / (1 - PEAK_POINT);
-                        mobileOvershootDx = flingDir * MOBILE_OVERSHOOT_PX * (1 - p * p * (3 - 2 * p));
-                        mVel      = -flingDir * MOBILE_OVERSHOOT_PX * sprim;
-                        mPeakVel  = MOBILE_OVERSHOOT_PX * 1.5 / (1 - PEAK_POINT);
-                        mTiltCoef = MAX_TILT_DEG * RETURN_TILT_RATIO;
+                        // Phase B: swingPeak → 0 via easeInOutCubic — slow departure
+                        // from peak, smooth glide back to centre, no snap.
+                        const p    = (t - MOB_SWING_PEAK) / (1 - MOB_SWING_PEAK);
+                        const eio  = p < 0.5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3) / 2;
+                        const deio = p < 0.5 ? 12*p*p  : 3 * Math.pow(2 - 2*p, 2);
+                        mobileOvershootDx = swingPeak * (1 - eio);
+                        mVel      = -swingPeak * deio / (1 - MOB_SWING_PEAK);
+                        mPeakVel  = Math.abs(swingPeak) * 3 / (1 - MOB_SWING_PEAK);
+                        mTiltCoef = MAX_TILT_DEG * RETURN_TILT_RATIO * 2.5;
                     }
                     rotZ = mPeakVel > 0 ? (mVel / mPeakVel) * mTiltCoef * tiltGate : 0;
                 }
 
                 // Bike crossing stays time-driven (easeIO over the flight phase)
                 // so it doesn't inherit the phone's overshoot.
-                const spinProgress = Math.min(t / PEAK_POINT, 1);
+                const spinProgress = Math.min(t / PEAK_POINT * 1.2, 1);
                 const spinEased    = easeIO(spinProgress);
                 const bikeX       = animBikeLtr
                     ? -vw * 0.9 + vw * 1.8 * spinEased
@@ -814,11 +902,17 @@
                 // on top: a slide offset that pushes the outgoing card off in
                 // the direction of travel and pulls the incoming card in from
                 // the opposite side. Opacity cross-fades at the midpoint.
-                const SLIDE_DIST = 120;
-                const slideDir = dir !== 0 ? dir : (animFwd ? 1 : -1);
-                const slideE   = easeIO(t);
-                const fromSlideX = slideDir * SLIDE_DIST * slideE;          // 0 → +SLIDE
-                const toSlideX   = -slideDir * SLIDE_DIST * (1 - slideE);   // -SLIDE → 0
+                const SLIDE_DIST   = 120;
+                const SLIDE_Y_DIST = 48;
+                const slideDir  = dir !== 0 ? dir : (animFwd ? 1 : -1);
+                const slideE    = easeIO(t);
+                const fromSlideX = isMobile ? 0 : slideDir  * SLIDE_DIST * slideE;
+                const toSlideX   = isMobile ? 0 : -slideDir * SLIDE_DIST * (1 - slideE);
+                // On mobile, cards animate vertically: exit upward, enter from below
+                // (reversed for backward transitions).
+                const slideYDir  = animFwd ? -1 : 1;
+                const fromSlideY = isMobile ?  slideYDir * SLIDE_Y_DIST * slideE       : 0;
+                const toSlideY   = isMobile ? -slideYDir * SLIDE_Y_DIST * (1 - slideE) : 0;
 
                 const fromPos = sectionData(fromSec).position;
                 const toPos   = sectionData(toSec).position;
@@ -834,8 +928,8 @@
 
                 const fromIdx = activeSlotIdx;
                 const toIdx   = 1 - activeSlotIdx;
-                setSlot(fromIdx, fromAnchor + fromSlideX, fadeOut * fromMax);
-                setSlot(toIdx,   toAnchor   + toSlideX,   fadeIn  * toMax);
+                setSlot(fromIdx, fromAnchor + fromSlideX, fadeOut * fromMax, fromSlideY);
+                setSlot(toIdx,   toAnchor   + toSlideX,   fadeIn  * toMax,   toSlideY);
 
                 hero.style.setProperty('--nyb-unit-dx',      `${(isMobile ? mobileOvershootDx : curDx).toFixed(1)}px`);
                 hero.style.setProperty('--nyb-phone-roty',    `${phoneRotY.toFixed(1)}deg`);
@@ -979,6 +1073,13 @@
                 }
 
                 prevProgress = progress;
+
+                // Button slides in as phone reveals (copyT0 0→1), stays visible once pinned.
+                if (isMobile && previewBtn && state !== 'animating') {
+                    const btnT = state === 'pinned' ? 1 : copyT0;
+                    previewBtn.style.opacity   = btnT.toFixed(4);
+                    previewBtn.style.transform = `translateX(-50%) translateY(${((1 - btnT) * 32).toFixed(1)}px)`;
+                }
 
                 // Drive scroll & restored states (active slot tracks live phone dx).
                 if ((state === 'scroll' || state === 'restored') && !animRafId) {
