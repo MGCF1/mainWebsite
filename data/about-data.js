@@ -14,7 +14,7 @@ window.aboutData = [
   {
     "caption": "WWDC Scholar",
     "title": "Two Time Recipient",
-    "subtitle": "2019, 2023",
+    "subtitle": "2021, 2023",
     "backgroundImage": "images/AboutMe/WWDC.png"
   },
   {
@@ -38,7 +38,7 @@ window.aboutData = [
   {
     "caption": "Career",
     "title": "Working Since College",
-    "subtitle": "I was hired for my first iOS job in my sophmore year of college",
+    "subtitle": "I was hired for my first iOS job in my sophomore year of college",
     "backgroundImage": "images/AboutMe/Work.png"
   }
 ];

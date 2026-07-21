@@ -2,7 +2,7 @@ window.highlightsData = [
   {
     "caption": "Design Update",
     "title": "NYBiker iOS 26",
-    "subtitle": "Completely redesigned uniquely incorperating liquid glass.",
+    "subtitle": "Completely redesigned, uniquely incorporating Liquid Glass.",
     "backgroundImage": "images/Highlights/NYBikeriOS26.png",
     "backgroundGradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
     "link": "projects/nybiker.html",
@@ -47,7 +47,7 @@ window.highlightsData = [
   {
     "caption": "App Launch",
     "title": "Adesso",
-    "subtitle": "A new iOS app designed to simplify your daily workflow.",
+    "subtitle": "A heart-health companion empowering women to build healthy habits.",
     "backgroundImage": "images/Highlights/Adesso.png",
     "backgroundGradient": "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
     "link": "https://apps.apple.com/us/app/myadesso/id6497954262",

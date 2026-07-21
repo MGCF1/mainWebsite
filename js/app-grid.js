@@ -1,12 +1,7 @@
 let projects = [];
 
-async function loadProjects() {
-    try {
-        projects = window.projectsData;
-        console.log('Projects loaded successfully:', projects.length);
-    } catch (error) {
-        console.error('Error loading projects:', error);
-    }
+function loadProjects() {
+    projects = window.projectsData || [];
 }
 
 // Create floating background icons
@@ -27,7 +22,6 @@ function createFloatingIcons() {
     // Preserve the overlay divs
     backLayer.querySelectorAll('.floating-icon').forEach(el => el.remove());
     frontLayer.querySelectorAll('.floating-icon').forEach(el => el.remove());
-    console.log('Creating floating icons for', projects.length, 'projects');
 
     const isMobile = window.innerWidth < 600;
 
@@ -131,6 +125,7 @@ function createFloatingIcons() {
             const img = document.createElement('img');
             img.src = project.icon;
             img.alt = project.name;
+            img.decoding = 'async';
             img.style.width = '100%';
             img.style.height = '100%';
             img.style.objectFit = 'cover';
@@ -233,7 +228,6 @@ function animateFloatingIcons() {
         icons.forEach((icon) => {
             const speed = parseFloat(icon.dataset.speed);
             const startY = parseFloat(icon.dataset.startY);
-            const startX = parseFloat(icon.dataset.startX);
             const totalRange = parseFloat(icon.dataset.totalRange);
 
             // Calculate vertical position - move UPWARD continuously
@@ -247,10 +241,8 @@ function animateFloatingIcons() {
                 wrappedY = wrappedY + totalRange;
             }
 
-            // Apply position with hardware acceleration
-            icon.style.left = `${startX}%`;
+            // Only top changes per frame; left and transform are set at creation
             icon.style.top = `${wrappedY}%`;
-            icon.style.transform = 'translate3d(-50%, -50%, 0)';
         });
 
         requestAnimationFrame(animate);
@@ -361,9 +353,9 @@ function setupScrollBlur() {
 }
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     // Load project data first
-    await loadProjects();
+    loadProjects();
 
     // Then create icons and set up animations
     createFloatingIcons();

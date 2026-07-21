@@ -106,6 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const img = document.createElement('img');
         img.src = tool.image;
         img.alt = tool.name;
+        img.loading = 'lazy';
+        img.decoding = 'async';
         iconItem.appendChild(img);
 
         toolsGrid.appendChild(iconItem);
@@ -166,21 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         requestAnimationFrame(updateIcons);
     }
 
-    toolsGrid.addEventListener('mousemove', (e) => {
-        mouseX = e.clientX;
-        mouseY = e.clientY;
-        isMouseInside = true;
-    });
-
-    toolsGrid.addEventListener('mouseleave', () => {
-        isMouseInside = false;
-    });
-
     requestAnimationFrame(updateIcons);
-
-    function updateToggles() {
-        // Icon swap is handled purely via CSS (.active class toggles background-image)
-    }
 
     function updateActiveState(toolKey) {
         toolNames.forEach(el => {
@@ -188,7 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
             el.classList.toggle('active', isActive);
             el.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         });
-        updateToggles();
     }
 
     function selectTool(toolKey) {

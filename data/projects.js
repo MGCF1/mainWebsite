@@ -11,7 +11,7 @@ window.projectsData = [
     {
         "id": "shortform",
         "name": "ShortForm",
-        "description": "Short show by real people",
+        "description": "Short shows by real people",
         "icon": "images/Icons/ShortForm.png",
         "gradient": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         "url": "https://apps.apple.com/us/app/shortform-series/id6758223361",
@@ -32,8 +32,8 @@ window.projectsData = [
         "description": "NYC cycling route planner",
         "icon": "images/Icons/NYBiker_Icon.png",
         "gradient": "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-        "url": "/projects/NYBiker",
-        "external": true
+        "url": "projects/nybiker.html",
+        "external": false
     },
     {
         "id": "divvy",
@@ -47,7 +47,7 @@ window.projectsData = [
     {
         "id": "adesso",
         "name": "Adesso",
-        "description": "Time management and productivity",
+        "description": "Women's heart-health companion",
         "icon": "images/Icons/Adesso_Icon.png",
         "gradient": "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
         "url": "https://apps.apple.com/us/app/myadesso/id6497954262",
@@ -92,7 +92,7 @@ window.projectsData = [
     {
         "id": "quickvo",
         "name": "QuickVo",
-        "description": "Voice notes and transcription",
+        "description": "Time tracking and invoicing for freelancers",
         "icon": "images/Icons/QuickVo_Icon.png",
         "gradient": "linear-gradient(135deg, #2af598 0%, #009efd 100%)",
         "url": "https://apps.apple.com/us/app/quickvo/id6698862077",

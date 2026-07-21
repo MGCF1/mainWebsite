@@ -53,7 +53,7 @@ window.toolsCatalog = [
                 key: "photokit",
                 name: "PhotoKit",
                 image: "images/Tools/Kits/PhotoKit.png",
-                description: "Photo kit allows importing and exporting photos and videos from the users library. This was a pivotal part of the Vestr social finance app, whih allowed users to upload photos when making a post."
+                description: "PhotoKit allows importing and exporting photos and videos from the user's library. This was a pivotal part of the Vestr social finance app, which allowed users to upload photos when making a post."
             },
             {
                 key: "realitykit",

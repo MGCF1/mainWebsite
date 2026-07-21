@@ -401,7 +401,7 @@
     <script>
         (function () {
             const qrEl = document.getElementById('nyb-qr');
-            if (qrEl) {
+            if (qrEl && typeof QRCode !== 'undefined') {
                 new QRCode(qrEl, {
                     text: 'https://appclip.apple.com/id?p=com.mgcf1.commuter.Clip',
                     width: 128,

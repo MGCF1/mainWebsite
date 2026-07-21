@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const icon = document.createElement('img');
             icon.src = item.icon;
             icon.alt = item.label;
+            icon.loading = 'lazy';
+            icon.decoding = 'async';
             iconWrap.appendChild(icon);
 
             const label = document.createElement('span');
