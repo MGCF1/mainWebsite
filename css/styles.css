@@ -506,199 +506,305 @@ body {
 }
 
 /* ==========================================
-   Section 2: Tools
+   Section 2: Skills
    ========================================== */
-.tools-card {
-    background: var(--card-background);
-    border-radius: 24px;
-    padding: 40px;
-    overflow: visible;
-}
+/* Desktop (default here): two panels side by side — a fixed 280px capsule
+   column (leading edge) and an image panel filling the rest. This is a
+   real CSS Grid now, not an overlay — the capsule list sits in normal
+   flow next to the image rather than floating on top of it, so there's
+   no legibility scrim to worry about on this breakpoint.
 
-.tools-container {
+   Mobile (768px override below) reverts to the original overlay model:
+   .skills-image-panel collapses to display: contents (so #skillsMedia
+   behaves exactly as if it were a direct child of .skills-stack again),
+   and a bottom pill row expands a single floating card over the shared
+   background image — that's where the scrim still earns its keep. */
+.skills-stack {
+    position: relative;
+    width: 100%;
     display: grid;
-    grid-template-columns: 240px 1fr;
-    gap: 24px;
+    grid-template-columns: 280px 1fr;
+    gap: 32px;
     align-items: stretch;
-    /* Allow tools display to fill vertical space */
-    min-height: 450px;
 }
 
-.tools-list {
-    position: sticky;
-    top: calc(var(--nav-height) + 40px);
-}
-
-.tools-group {
-    margin-bottom: 24px;
-}
-
-.tools-group-title {
-    color: var(--text-secondary);
-    margin-bottom: 12px;
-    padding-left: 2px;
-}
-
-.tools-group-items {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.tool-name {
-    font-size: 16px;
-    font-weight: 400;
-    padding: 8px 2px;
-    cursor: pointer;
-    color: var(--text-secondary);
-    transition: color 0.25s ease;
-    border-radius: 8px;
+.skills-accordion-column {
     display: flex;
     align-items: center;
-    gap: 10px;
+    align-self: center;
+    gap: 12px;
+}
+
+/* Desktop-only card holding the per-category image + its tags. */
+.skills-image-panel {
+    background: var(--card-background);
+    border-radius: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.skills-media {
+    position: relative;
     width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
-    font: inherit;
-    appearance: none;
-}
-
-.tool-name:hover {
-    color: var(--text-primary);
-}
-
-.tool-name.active {
-    color: var(--text-primary);
-    font-weight: 600;
-}
-
-/* Capsule toggle +/- circle icons */
-.tool-toggle {
-    width: 22px;
-    height: 22px;
+    aspect-ratio: 16 / 9;
     flex-shrink: 0;
-    transition: all 0.25s ease;
+    /* contain, not cover — a transparent-background image should sit
+       inset on the card's own color, not get cropped edge to edge. */
     background-size: contain;
-    background-repeat: no-repeat;
     background-position: center;
-    /* plus.circle outline — gray */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2386868b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='8' x2='12' y2='16'/%3E%3Cline x1='8' y1='12' x2='16' y2='12'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
 }
 
-.tool-name.active .tool-toggle {
-    /* minus.circle.fill — accent filled */
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%230071e3'/%3E%3Cline x1='8' y1='12' x2='16' y2='12' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+.skills-media-layer {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    transition: opacity 0.3s ease;
+}
+
+.skills-media-layer.is-visible {
+    opacity: 1;
+}
+
+.skills-image-tags {
+    padding: 20px;
+}
+
+/* Legibility scrim for the mobile overlay — irrelevant on desktop, where
+   the capsule list no longer sits on top of the image. */
+.skills-scrim {
+    display: none;
+}
+
+/* Shared text styles used by both the desktop accordion panel and the
+   mobile card content */
+/* Base (desktop) text styles — the accordion sits on real card material,
+   so this follows the theme like any other card. Mobile overrides these
+   back to a white/translucent treatment further down, since the mobile
+   card floats directly on the image rather than on opaque card material. */
+.skills-overview {
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    margin: 0 0 12px;
+}
+
+.skills-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.skills-tag {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 980px;
+    padding: 7px 14px;
 }
 
 @media (prefers-color-scheme: dark) {
-    .tool-name.active .tool-toggle {
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='10' fill='%232997ff'/%3E%3Cline x1='8' y1='12' x2='16' y2='12' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    .skills-tag {
+        background: rgba(255, 255, 255, 0.08);
     }
 }
 
-/* Tools display area */
-.tools-display {
-    position: relative;
-    height: 100%;
-    /* Stretch to container height */
-    min-height: 400px;
-    overflow: visible;
+/* ── Desktop: leading-edge accordion ─────────────────────────────────── */
+/* In normal flow now (a flex child of .skills-accordion-column), vertically
+   centered via that column's own align-items: center rather than absolute
+   positioning. max-height/overflow-y is a safety net in case content ever
+   exceeds the available height. align-items: flex-start lets collapsed
+   items hug their own content width instead of stretching to the 280px
+   column; .is-open opts back into the full width. */
+.skills-accordion {
+    width: 280px;
+    max-height: calc(100% - 48px);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    overflow-y: auto;
 }
 
-/* Floating icons grid (non-uniform layout, positioned by JS) */
-.tools-grid {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    min-height: 400px;
-    margin: 0 auto;
-    transition: opacity 0.35s ease, transform 0.35s ease;
-    overflow: visible;
-}
-
-.tools-grid.is-hidden {
+.skills-accordion-nav-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+    /* 0, not display: none — stays in place (no layout shift) and just
+       fades in once something is selected */
     opacity: 0;
-    transform: scale(0.96);
     pointer-events: none;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    transition: opacity 0.25s ease;
 }
 
-.tool-icon-item {
-    position: absolute;
-    top: 0;
-    left: 0;
+.skills-accordion-nav-wrap.has-open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.skills-accordion-nav {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    will-change: transform;
-    background: none !important;
-    border-radius: 22%;
-    overflow: visible;
-    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.25));
-    transition: filter 0.3s ease;
 }
 
-.tool-icon-item:hover {
-    z-index: 10;
-    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.3));
+/* Single close control for the whole box, top-right of .skills-stack —
+   not per-item. Same show/hide-by-opacity treatment as the steppers. */
+.skills-accordion-close {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    z-index: 2;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.35);
+    color: #fff;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+    cursor: pointer;
 }
 
-.tool-icon-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    border-radius: 22%;
+.skills-accordion-close.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Items are real card material now, matching every other card on the
+   site — not a translucent glass tint. */
+.skills-accordion-item {
+    /* border-radius is fixed at exactly half of .skills-accordion-head's
+       fixed height (52px / 2 = 26px) — not recalculated when the item
+       grows taller on expand. That constant is what makes it read as a
+       true capsule while collapsed (radius = half height = fully round
+       ends) and cleanly settle into an ordinary rounded rectangle once
+       expanded, instead of staying pill-shaped at a much taller height. */
+    flex-shrink: 0;
+    max-width: 100%;
+    border-radius: 26px;
+    overflow: hidden;
+    background: var(--card-background);
+    /* --skills-item-w is measured once in JS (the head's natural content
+       width — CSS alone can't transition to/from auto/shrink-to-fit) so
+       this can animate the same way the height does. Falls back to auto
+       for the instant before JS runs. */
+    width: var(--skills-item-w, auto);
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.skills-accordion-item.is-open {
+    width: 280px;
+}
+
+.skills-accordion-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 52px;
+    padding: 0 28px 0 18px;
+    background: none;
+    border: none;
+    font: inherit;
+    text-align: left;
+    color: var(--text-primary);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.skills-accordion-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+
+.skills-accordion-icon svg {
     display: block;
 }
 
-/* Tools detail view */
-.tools-detail {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+/* The focused item's own plus hides — closing is handled by the single
+   .skills-accordion-close control for the whole box, not per item. */
+.skills-accordion-item.is-open .skills-accordion-icon {
     opacity: 0;
-    transform: scale(0.96);
-    transition: opacity 0.35s ease, transform 0.35s ease;
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    pointer-events: none;
 }
 
-.tools-detail.is-visible {
-    opacity: 1;
-    transform: scale(1);
-    pointer-events: auto;
-    position: relative;
-}
-
-.tools-detail-icon {
-    width: 160px;
-    height: 160px;
-    border-radius: 22%;
-    object-fit: cover;
-    filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.2));
-    margin-bottom: 28px;
-}
-
-.tools-detail-name {
-    font-size: 32px;
+.skills-accordion-name {
+    font-size: 15px;
     font-weight: 600;
-    letter-spacing: -0.01em;
-    margin-bottom: 8px;
 }
 
-.tools-detail-desc {
-    font-size: 17px;
-    color: var(--text-secondary);
-    max-width: 440px;
-    line-height: 1.6;
+.skills-accordion-body {
+    display: grid;
+    grid-template-rows: 0fr;
+    /* Deliberately NOT a percentage — the item itself now animates its
+       own width too, and if this tracked that live (100%), the panel's
+       text would reflow continuously as the item's box resizes, which
+       recomputes the grid row's 1fr target every frame and makes the
+       height animation jump around. Pinning this to the SAME explicit
+       values as the item's own width/is-open width (rather than a live
+       percentage of it) keeps the panel content at a stable width for
+       the whole transition — item's outer box is still free to animate
+       its width smoothly in sync, clipped against by its own
+       overflow: hidden, with no visible seam. */
+    width: var(--skills-item-w, auto);
+    /* On close, width must NOT change until the height transition has
+       finished — if it does, the text reflows into a near-zero-width
+       column mid-shrink (nearly every word on its own line), the row's
+       1fr/0fr height target is computed off that ballooned content
+       height, and the box visibly jumps tall before collapsing. Delaying
+       the (instant, 0s) width change by the same 0.35s as the height
+       transition keeps the width stable for the whole shrink, so there's
+       nothing to reflow until after it's already collapsed. */
+    transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                width 0s linear 0.35s;
+}
+
+.skills-accordion-item.is-open .skills-accordion-body {
+    grid-template-rows: 1fr;
+    width: 280px;
+    /* On open, width must snap immediately (no delay) so the text is
+       already laid out at its final width before/as the height grows. */
+    transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                width 0s linear 0s;
+}
+
+.skills-accordion-body-inner {
+    overflow: hidden;
+}
+
+.skills-accordion-panel {
+    padding: 0 28px 16px 18px;
+}
+
+/* ── Mobile pill row / floating card / nav arrows ────────────────────
+   Hidden on desktop; shown by the 768px override below. */
+.skills-pillrow,
+.skills-card,
+.skills-card-nav {
+    display: none;
 }
 
 /* ==========================================
@@ -1028,77 +1134,202 @@ body {
         font-size: 14px;
     }
 
-    /* Tools */
-    .tools-card {
-        padding: 24px;
+    /* Skills — the desktop two-panel layout (capsule column + image card)
+       is swapped out entirely for the original overlay model: a shared
+       background image with a bottom pill row that expands a single
+       floating card. Image goes much taller (3:4) so there's real room
+       for the row plus an expanded card without either feeling cramped. */
+    .skills-stack {
+        /* Back to a plain positioning context, not a grid — .skills-media,
+           .skills-pillrow, .skills-card etc. all go back to being
+           absolutely-positioned children of this directly, exactly as
+           before the desktop two-panel layout existed. */
+        display: block;
+    }
+
+    .skills-accordion-column,
+    .skills-accordion-close {
+        display: none;
+    }
+
+    /* .skills-image-panel dissolves (no box of its own) so #skillsMedia
+       and .skills-image-tags behave as if they were direct children of
+       .skills-stack again — but .skills-image-tags itself is still
+       desktop-only content (mobile tags live in the floating card's own
+       #skillsTags), so hide it explicitly. */
+    .skills-image-panel {
+        display: contents;
+    }
+
+    .skills-image-tags {
+        display: none;
+    }
+
+    /* Legibility scrim behind the pill row / floating card — this is
+       where it actually earns its keep, unlike on desktop. */
+    .skills-scrim {
+        display: block;
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
+    }
+
+    /* Restore the white/translucent treatment for these shared classes —
+       the mobile card floats directly on the image, not on opaque card
+       material like the desktop accordion does. */
+    .skills-overview {
+        color: rgba(255, 255, 255, 0.85);
+    }
+
+    .skills-tag {
+        color: #fff;
+        background: rgba(255, 255, 255, 0.18);
+    }
+
+    .skills-media {
+        aspect-ratio: 3 / 4;
         border-radius: 20px;
     }
 
-    .tools-container {
-        grid-template-columns: 1fr;
-        gap: 24px;
-    }
-
-    .tools-list {
-        position: static;
+    .skills-pillrow {
         display: flex;
-        gap: 16px;
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        z-index: 2;
+        gap: 8px;
         overflow-x: auto;
         scrollbar-width: none;
         -ms-overflow-style: none;
-        padding-bottom: 8px;
-        margin-left: -24px;
-        margin-right: -24px;
-        padding-left: 24px;
-        padding-right: 24px;
+        transition: opacity 0.25s ease;
     }
 
-    .tools-list::-webkit-scrollbar {
+    .skills-pillrow::-webkit-scrollbar {
         display: none;
     }
 
-    .tools-group {
-        margin-bottom: 0;
+    .skills-pillrow.is-hidden {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .skills-pill {
         flex: 0 0 auto;
-    }
-
-    .tools-group-items {
         display: flex;
-        gap: 4px;
-    }
-
-    .tool-name {
-        white-space: nowrap;
-        padding: 6px 14px;
-        font-size: 14px;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
         border-radius: 980px;
-        background: rgba(0, 0, 0, 0.04);
+        background: rgba(0, 0, 0, 0.45);
+        color: #fff;
+        border: none;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
     }
 
-    .tool-name.active {
-        background: var(--accent);
-        color: white;
+    .skills-pill-hint {
+        font-size: 13px;
+        line-height: 1;
+        flex-shrink: 0;
     }
 
-    .tool-toggle {
-        display: none;
+    /* Nav arrows sit outside the card entirely — fixed near the top of the
+       image so they never overlap the card regardless of how tall it grows
+       to fit its content — visible only while a card is expanded. */
+    .skills-card-nav {
+        display: flex;
+        position: absolute;
+        top: 20px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.4);
+        color: #fff;
+        border: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        z-index: 4;
+        cursor: pointer;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
     }
 
-    .tools-display {
-        min-height: 280px;
+    .skills-card-nav.is-visible {
+        opacity: 1;
+        pointer-events: auto;
     }
 
-    .tools-grid {
-        min-height: 280px;
+    .skills-card-nav-prev {
+        left: 16px;
     }
 
-    .tools-detail-icon {
-        width: 120px;
-        height: 120px;
+    .skills-card-nav-next {
+        right: 16px;
     }
 
-    .tools-detail-name {
-        font-size: 24px;
+    /* The card itself hugs its content via the same grid-rows technique as
+       the desktop accordion, rather than filling a fixed/arbitrary height —
+       .skills-card-inner's overflow: hidden is what makes the 0fr collapse
+       actually clip during the transition. */
+    .skills-card {
+        display: grid;
+        grid-template-rows: 0fr;
+        position: absolute;
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        z-index: 3;
+        border-radius: 20px;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .skills-card.is-expanded {
+        grid-template-rows: 1fr;
+    }
+
+    .skills-card-inner {
+        position: relative;
+        overflow: hidden;
+        padding: 18px;
+    }
+
+    .skills-card-title {
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: #fff;
+        margin: 0 0 6px;
+        padding-right: 36px;
+    }
+
+    .skills-card-close {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        cursor: pointer;
     }
 
     /* About */
@@ -1180,18 +1411,6 @@ body {
 
     .phone-app-icon-label {
         font-size: 9px;
-    }
-}
-
-/* Responsive: Mobile Dark Mode (≤ 768px) */
-@media (max-width: 768px) and (prefers-color-scheme: dark) {
-    .tool-name {
-        background: rgba(255, 255, 255, 0.06);
-    }
-
-    .tool-name.active {
-        background: var(--accent);
-        color: white;
     }
 }
 
