@@ -14,12 +14,20 @@ toolsCatalog.forEach(group => {
 const iconPositions = (() => {
     const toolsGrid = document.querySelector('.tools-grid');
     const gridWidth = toolsGrid ? toolsGrid.offsetWidth : 400;
+    const gridHeight = toolsGrid ? toolsGrid.offsetHeight : 400;
     const isMobile = window.innerWidth <= 768;
-    const baseSize = gridWidth * (isMobile ? 0.22 : 0.18);
 
     const positions = [];
     const cols = isMobile ? 3 : 4;
     const rows = isMobile ? 4 : 3;
+
+    // Icon size used to be derived from grid width alone, sized for its
+    // column slot. On mobile the grid is only ~280px tall with 4 rows, so
+    // that width-based size was taller than a row's actual slot and rows
+    // overlapped. Cap by whichever axis (column width or row height) is
+    // tighter so icons never exceed their own cell.
+    const sizeRatio = isMobile ? 0.66 : 0.72; // same ratio the old width-only formula used
+    const baseSize = Math.min(gridWidth / cols, gridHeight / rows) * sizeRatio;
 
     for (let i = 0; i < toolKeys.length; i++) {
         const row = Math.floor(i / cols);

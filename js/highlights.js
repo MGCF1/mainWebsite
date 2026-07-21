@@ -18,6 +18,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             card.className = 'highlight-card';
 
+            // Clipped inner wrapper — keeps rounded image corners without
+            // clipping the card's own hover box-shadow
+            const inner = document.createElement('div');
+            inner.className = 'highlight-card-inner';
+            card.appendChild(inner);
+
             // Image/gradient area
             const imageDiv = document.createElement('div');
             imageDiv.className = 'highlight-card-image';
@@ -26,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (item.backgroundGradient) {
                 imageDiv.style.background = item.backgroundGradient;
             }
-            card.appendChild(imageDiv);
+            inner.appendChild(imageDiv);
 
             // Content area
             const contentDiv = document.createElement('div');
@@ -51,9 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 contentDiv.appendChild(desc);
             }
 
-            card.appendChild(contentDiv);
-
-            // CTA
+            // CTA — stacked in normal flow below the description, not
+            // floating over it
             if (item.cta && hasLink) {
                 const cta = document.createElement('span');
                 cta.className = 'highlight-card-plus';
@@ -69,8 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 cta.appendChild(ctaText);
                 cta.appendChild(ctaChevron);
-                card.appendChild(cta);
+                contentDiv.appendChild(cta);
             }
+
+            inner.appendChild(contentDiv);
 
             scroll.appendChild(card);
         });

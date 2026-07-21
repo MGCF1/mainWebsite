@@ -370,8 +370,11 @@ body {
     /* Override default horizontal-scroll padding to center first & last cards */
     padding-left: calc(50vw - min(calc((100vw - 120px) / 2), 360px));
     padding-right: calc(50vw - min(calc((100vw - 120px) / 2), 360px));
-    padding-top: 16px;
-    padding-bottom: 32px;
+    /* Extra top/bottom room so the hover box-shadow (0 20px 60px) has space
+       to render — overflow-x: auto forces overflow-y to clip too, even
+       though it's set to visible */
+    padding-top: 48px;
+    padding-bottom: 80px;
     scroll-snap-type: x mandatory;
 }
 
@@ -382,19 +385,26 @@ body {
     flex: 0 0 auto;
     width: min(calc(100vw - 120px), 720px);
     border-radius: 20px;
-    overflow: hidden;
     scroll-snap-align: center;
-    background: var(--card-background);
     text-decoration: none;
     color: var(--text-primary);
-    display: flex;
-    flex-direction: column;
     transition: transform 0.4s ease, box-shadow 0.4s ease;
     cursor: pointer;
     position: relative;
     transform: scale(0.95);
     opacity: 1;
     /* Ensure unfocused cards don't lose opacity */
+    /* overflow/background live on .highlight-card-inner so this element's
+       hover box-shadow isn't clipped by its own overflow:hidden */
+}
+
+.highlight-card-inner {
+    border-radius: inherit;
+    overflow: hidden;
+    background: var(--card-background);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .highlight-card.is-disabled {
@@ -424,11 +434,11 @@ body {
     }
 }
 
-/* Plus indicator */
+/* Plus indicator — stacked in normal flow below the description, not
+   floating over it */
 .highlight-card-plus {
-    position: absolute;
-    bottom: 16px;
-    right: 16px;
+    align-self: flex-start;
+    margin-top: 8px;
     padding: 8px 8px 8px 14px;
     border-radius: 999px;
     background: var(--accent);
@@ -1189,6 +1199,19 @@ body {
    Responsive: Small Phones (≤ 600px)
    ========================================== */
 @media (max-width: 600px) {
+    /* At ~320px wide, "Milo Cassarino" + the nav links no longer fit on one
+       line (they land right at the edge of the available width) and the
+       logo text wraps, growing the fixed-height nav bar and pushing it
+       into the content below. Trim size/gap so it stays on one line. */
+    .nav-logo {
+        font-size: 16px;
+        white-space: nowrap;
+    }
+
+    .nav-links {
+        gap: 12px;
+    }
+
     .about-card {
         width: 70vw;
     }

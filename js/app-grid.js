@@ -280,7 +280,7 @@ function setupScrollBlur() {
             backLayer.classList.add('is-scrolled');
             frontLayer.classList.add('is-scrolled');
 
-            const overlayOpacity = Math.min(1, scrollY / 300);
+            const overlayOpacity = Math.min(0.5, scrollY / 300);
 
             // Fade in overlay to hide icons
             if (overlayBack) overlayBack.style.opacity = overlayOpacity;

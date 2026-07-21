@@ -300,9 +300,12 @@
                 will-change: transform, opacity;
             }
 
-            /* Cards: stack centred below the phone */
+            /* Cards: stack centred below the phone. Gap after the phone is
+               trimmed (20px → 8px) and body/title margins tightened below
+               to keep longer copy (e.g. "Station Details") clear of the
+               fixed Preview button pinned near the viewport bottom. */
             .nyb-feature-card {
-                top: calc(var(--nav-height) + 30px + var(--nyb-unit-h) + 20px) !important;
+                top: calc(var(--nav-height) + 30px + var(--nyb-unit-h) + 8px) !important;
                 left: 50% !important;
                 transform: translate(calc(-50% + var(--card-x, 0px)), var(--card-y, 0px)) !important;
                 text-align: center !important;
@@ -314,11 +317,11 @@
 
             .nyb-feature-title {
                 font-size: clamp(28px, 7vw, 44px);
-                margin-bottom: 6px;
+                margin-bottom: 4px;
             }
 
             .nyb-feature-body {
-                margin-bottom: 16px;
+                margin-bottom: 8px;
             }
 
             .nyb-scroll-hero {
@@ -421,6 +424,11 @@
             const clamp   = (v, a, b) => Math.min(b, Math.max(a, v));
             const easeOut = t => 1 - Math.pow(1 - t, 3);
             const easeIO  = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+
+            // Read once — mirrors the CSS custom property so the mobile fit
+            // math below (which can't use calc()) stays in sync with it.
+            const navHeight = parseFloat(getComputedStyle(document.documentElement)
+                .getPropertyValue('--nav-height')) || 48;
 
             // ── Virtual scroll ────────────────────────────────────────────────
             // vScroll is the single source of truth — the browser scroll position
@@ -753,6 +761,44 @@
                 return base;
             }
 
+            // ── Mobile fit ───────────────────────────────────────────────────
+            // On mobile the phone, feature-card text, and the fixed Preview
+            // button are all stacked in the same viewport. Their sizes are
+            // normally derived from width alone, so on a short viewport (or a
+            // section with a long body) the stack can outgrow the available
+            // height. Shrink the phone first (it has the most visual budget),
+            // then the button, just enough that nothing ends up fully hidden
+            // behind another element.
+            const MIN_PHONE_FIT_SCALE = 0.55;
+            const MIN_BTN_FIT_SCALE   = 0.75;
+            const CARD_TOP_GAP        = 8;  // mirrors the mobile .nyb-feature-card top calc
+            const BTN_CLEARANCE_GAP   = 16; // desired minimum gap between text and button
+            const BTN_BOTTOM_OFFSET   = 24; // mirrors .nyb-preview-btn bottom
+
+            function computeMobileFit(rawBezelH) {
+                const vh = window.innerHeight;
+                const activeSlot = slots[activeSlotIdx];
+                const contentH = activeSlot ? activeSlot.offsetHeight : 0;
+                const btnH = previewBtn ? previewBtn.offsetHeight : 40;
+
+                const needed = navHeight + 30 + rawBezelH + CARD_TOP_GAP + contentH
+                    + BTN_CLEARANCE_GAP + btnH + BTN_BOTTOM_OFFSET;
+                const deficit = needed - vh;
+                if (deficit <= 0) return { phoneScale: 1, btnScale: 1 };
+
+                const phoneShrinkBudget = rawBezelH * (1 - MIN_PHONE_FIT_SCALE);
+                if (deficit <= phoneShrinkBudget) {
+                    return { phoneScale: 1 - deficit / rawBezelH, btnScale: 1 };
+                }
+
+                const remaining = deficit - phoneShrinkBudget;
+                const btnShrinkBudget = btnH * (1 - MIN_BTN_FIT_SCALE);
+                const btnScale = remaining <= btnShrinkBudget
+                    ? 1 - remaining / btnH
+                    : MIN_BTN_FIT_SCALE;
+                return { phoneScale: MIN_PHONE_FIT_SCALE, btnScale };
+            }
+
             // ── Animation tick ───────────────────────────────────────────────
             function tickFlip(ts) {
                 if (!animStartTs) animStartTs = ts;
@@ -1012,7 +1058,22 @@
                 const vh       = window.innerHeight;
                 const isMobile = vw <= 768;
 
-                const phoneW  = isMobile ? Math.min(vw * 0.52, 220) : Math.min(vw * 0.26, 360);
+                const phoneWRaw = isMobile ? Math.min(vw * 0.52, 220) : Math.min(vw * 0.26, 360);
+
+                // Shrink phone (and, if that's not enough, the Preview button)
+                // when the active section's text won't otherwise fit between
+                // them without full overlap. No-op whenever there's room.
+                let phoneFitScale = 1;
+                let btnFitScale   = 1;
+                if (isMobile) {
+                    const rawBezelW = phoneWRaw * 1.1145;
+                    const rawBezelH = rawBezelW * (3000 / 1470);
+                    const fit = computeMobileFit(rawBezelH);
+                    phoneFitScale = fit.phoneScale;
+                    btnFitScale   = fit.btnScale;
+                }
+
+                const phoneW  = phoneWRaw * phoneFitScale;
                 const bezelW  = phoneW * 1.1145;
                 const bezelH  = bezelW * (3000 / 1470);
                 const screenW = bezelW * (1319 / 1470);
@@ -1078,7 +1139,7 @@
                 if (isMobile && previewBtn && state !== 'animating') {
                     const btnT = state === 'pinned' ? 1 : copyT0;
                     previewBtn.style.opacity   = btnT.toFixed(4);
-                    previewBtn.style.transform = `translateX(-50%) translateY(${((1 - btnT) * 32).toFixed(1)}px)`;
+                    previewBtn.style.transform = `translateX(-50%) translateY(${((1 - btnT) * 32).toFixed(1)}px) scale(${btnFitScale.toFixed(3)})`;
                 }
 
                 // Drive scroll & restored states (active slot tracks live phone dx).
