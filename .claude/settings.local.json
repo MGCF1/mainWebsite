@@ -19,7 +19,31 @@
       "Skill(update-config:*)",
       "Bash(gh pr create --title 'NYBiker mobile UX overhaul + animation polish' --body ' *)",
       "Bash(brew list *)",
-      "Bash(/opt/homebrew/bin/gh pr create --title 'NYBiker mobile UX overhaul + animation polish' --body ' *)"
+      "Bash(/opt/homebrew/bin/gh pr create --title 'NYBiker mobile UX overhaul + animation polish' --body ' *)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(rm -f /Users/milocassarino/Developer/mainWebsite/.git/index.lock && git status)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git count-objects *)",
+      "Bash(git ls-tree *)",
+      "Bash(awk '{print $4, $5}')",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(grep -n \"skills-pillrow,\\\\|skills-card,\\\\|skills-card-nav {\" /Users/milocassarino/Developer/mainWebsite/css/styles.css)",
+      "Bash(grep -n \"@media \\(max-width: 768px\\)\\\\|skills-stack {\\\\|skills-accordion-column,\\\\|skills-image-panel {\\\\|skills-image-tags {\\\\|skills-image-empty {\\\\|skills-media {\\\\|skills-pillrow {\\\\|skills-pill {\\\\|skills-card-nav {\\\\|skills-card {\\\\|skills-card-inner {\\\\|skills-card-content {\\\\|skills-card-title {\\\\|skills-card-close {\\\\|/\\\\* About \\\\*/\" /Users/milocassarino/Developer/mainWebsite/css/styles.css)",
+      "Bash(grep -n \"is-open,\\\\|is-peek-prev,\\\\|is-peek-next {\\\\|is-peek-prev {\\\\|left: 68px\\\\|right: 68px\\\\|skills-open-w\" /Users/milocassarino/Developer/mainWebsite/css/styles.css)",
+      "Bash(grep -n \"skills-accordion-item.is-open,$\\\\|skills-accordion-item.is-open {\" /Users/milocassarino/Developer/mainWebsite/css/styles.css)",
+      "Bash(grep -n \"is-far-prev,\\\\|is-far-next {\" /Users/milocassarino/Developer/mainWebsite/css/styles.css)",
+      "Bash(node --check /Users/milocassarino/Developer/mainWebsite/js/skills.js)",
+      "Bash(grep -n \"skills-accordion-icon,\\\\|skills-accordion-name {\" /Users/milocassarino/Developer/mainWebsite/css/styles.css)",
+      "Bash(node --check /Users/milocassarino/Developer/mainWebsite/data/skills-data.js)",
+      "Bash(grep -iE \"\\\\.\\(png|jpg|jpeg|webp\\)$\")",
+      "Bash(sips -g pixelWidth -g pixelHeight -g hasAlpha \"/Users/milocassarino/Desktop/Gemini_Generated_Image_wz6bjawz6bjawz6b.png\")",
+      "Bash(python3 -c ' *)",
+      "Bash(sips -g all \"/Users/milocassarino/Desktop/Gemini_Generated_Image_wz6bjawz6bjawz6b.png\")",
+      "Bash(magick identify *)",
+      "Bash(cp \"/Users/milocassarino/Desktop/Gemini_Generated_Image_wz6bjawz6bjawz6b.png\" \"/Users/milocassarino/Developer/mainWebsite/images/Skills/EmptyStateExploded.png\" && ls -la \"/Users/milocassarino/Developer/mainWebsite/images/Skills/EmptyStateExploded.png\")"
     ]
   }
 }

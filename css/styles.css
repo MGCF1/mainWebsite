@@ -521,25 +521,60 @@ body {
    background image — that's where the scrim still earns its keep. */
 .skills-stack {
     position: relative;
+    /* Establishes its own stacking context, containing the whole z-index
+       hierarchy below (media/empty-state/tags/capsule column) so none of
+       those values — including .skills-media's negative one — can escape
+       and end up resolving against something OUTSIDE this section
+       entirely. Without this, that negative z-index had nothing local to
+       be contained by, and .skills-media (with it) could end up painting
+       behind unrelated ancestor content instead of just behind its own
+       siblings here, which was hiding the images outright rather than
+       just tucking them behind the empty-state placeholder as intended. */
+    isolation: isolate;
     width: 100%;
     display: grid;
     grid-template-columns: 280px 1fr;
     gap: 32px;
     align-items: stretch;
-}
-
-.skills-accordion-column {
-    display: flex;
-    align-items: center;
-    align-self: center;
-    gap: 12px;
-}
-
-/* Desktop-only card holding the per-category image + its tags. */
-.skills-image-panel {
+    /* Uniform full-bleed backdrop for the section body (title excluded —
+       it lives in .section-inner, above this element). Same color as the
+       capsules' own card material, so the capsules need their own glass
+       treatment (below) to read as a distinct layer on top of it. */
     background: var(--card-background);
-    border-radius: 24px;
-    overflow: hidden;
+    /* Left inset only (right stays full-bleed for the image) so the
+       capsule column's own left edge lines up with the section title's
+       text. Same formula .section-inner's centering produces for its
+       content edge — plain var(--site-gutter) alone only matches below
+       the 1200px+gutters breakpoint; beyond it .section-inner's max-width
+       auto-margin pushes the title in further, and this must track that. */
+    padding-left: max(var(--site-gutter), calc((100vw - 1200px) / 2 + var(--site-gutter)));
+}
+
+/* Anchor for .skills-accordion-nav-wrap, which is positioned absolutely
+   just outside (to the left of) this column — so the up/down steppers can
+   sit in the gutter margin while the capsule list itself still starts
+   flush with the column's own left edge (aligned to the title inset). */
+.skills-accordion-column {
+    position: relative;
+    align-self: center;
+    /* Explicit, not left at the default auto — .skills-media has its own
+       explicit z-index (0, for containing its entering/exiting layers),
+       and an explicit z-index sibling actually painting later in the DOM
+       can still end up stacking above an auto one, which was letting the
+       image's own exit motion render on top of these capsules instead of
+       behind them once it started bleeding past its own box (the
+       clip-path change above). Highest in the section's local stack
+       (.skills-stack has isolation: isolate) — above .skills-image-tags
+       (z-index: 2) too, not just the media/empty-state layers below it. */
+    z-index: 3;
+}
+
+/* Desktop-only wrapper for the per-category image + its tags — no card
+   chrome. Tags are overlaid on the image itself (absolutely positioned,
+   anchored to this element) rather than occupying their own flow space
+   below it, so the panel's height tracks the image alone. */
+.skills-image-panel {
+    position: relative;
     display: flex;
     flex-direction: column;
 }
@@ -547,37 +582,238 @@ body {
 .skills-media {
     position: relative;
     width: 100%;
-    aspect-ratio: 16 / 9;
+    /* Establishes its own stacking context (position: relative alone
+       doesn't — it needs an explicit z-index too) so the entering/exiting
+       layers' own z-index: 1/2 (below, for keeping whichever one is
+       currently arriving above the one leaving) stays CONTAINED inside
+       this element instead of leaking out to compete directly with
+       siblings like .skills-accordion-column and .skills-image-tags —
+       without this, the media layers were winning ties against both of
+       those and sitting on top of them, blocking taps on the capsules and
+       covering the tags. The lowest layer in the section's local stack
+       (.skills-stack has isolation: isolate, above, so this — and every
+       other z-index in this section — is guaranteed to stay contained
+       here rather than potentially resolving against something outside
+       it entirely). */
+    z-index: 0;
+    /* Vertical motion (the desktop stepper's up/down) still gets clipped
+       at this box's own top/bottom edge — bleeding past that would spill
+       into the section title above or the row below during the brief
+       transition. Horizontal motion (left/right — the default for a
+       direct selection, or the mobile arrow taps) is deliberately NOT
+       clipped, so it can travel past this box's own edge and behind the
+       capsule column (z-index, above, already keeps that column rendering
+       on top of it) instead of being cut off right at the image panel's
+       own boundary before it ever gets there.
+
+       clip-path, not overflow-x/-y — mixing those doesn't actually work
+       the way it looks like it should: per spec, if either axis isn't
+       visible, the OTHER one's computed value is forced to auto instead
+       of the literal visible it was set to, and auto still clips just
+       like hidden does. clip-path has no such quirk — inset()'s left/right
+       here are pushed way outside the box (-100vw), so nothing realistic
+       ever reaches that boundary, while top/bottom stay pinned exactly at
+       the box's own edge. */
+    overflow: visible;
+    clip-path: inset(0 -100vw 0 -100vw);
+    /* Explicitly matches .skills-stack's own background (also
+       --card-background) rather than leaving this unset and just
+       inheriting it visually — with real images now (contain-fitted,
+       often not filling the box edge to edge), this needs to be a real,
+       intentional value so the letterbox gaps read as part of the same
+       uniform card surface the rest of the section sits on, not a
+       different, mismatched box. (Was briefly set to var(--background),
+       the page's own color, instead — that's a different token
+       (#ffffff/white vs --card-background's #f5f5f7/light gray in light
+       mode), which was exactly what made this read as a distinct white
+       box rather than blending into the section.) */
+    background-color: var(--card-background);
+    /* A preset height, not an aspect-ratio — this panel is full-bleed now,
+       so its width swings a lot with viewport width, and tying height to
+       that (as aspect-ratio would) made the section balloon on wide
+       screens. max-height is the shrink-on-short-windows fallback. The box
+       doesn't need to match a tall/skinny image's own ratio — contain
+       (below) just letterboxes it, which reads fine on the card's own
+       background color. */
+    height: 680px;
+    max-height: 75vh;
     flex-shrink: 0;
     /* contain, not cover — a transparent-background image should sit
-       inset on the card's own color, not get cropped edge to edge. */
+       inset on the card's own color, not get cropped edge to edge (real
+       images now, with their own intrinsic dimensions — the old
+       explicit-size stand-in this needed for the gradient placeholders,
+       which had no intrinsic size of their own, is gone). Centered both
+       ways here — desktop's own image panel has nothing overlapping its
+       top edge, unlike mobile's close button (see the mobile override
+       further down, which goes back to a top-anchored position with some
+       clearance instead). */
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
 }
 
+/* Resting/entering state — a layer about to become visible sits here,
+   offset toward wherever it should visibly travel FROM (--media-in-x/y,
+   skills.js — direction depends on how the skill was selected: the
+   up/down stepper, an arrow tap, a swipe, or a direct capsule click; see
+   updateMedia). Slightly blurred, scaled down, and transparent, all
+   settling to their resting values together on is-visible below — the
+   combined effect is a soft "arrives from that direction" motion, not
+   just a plain crossfade. */
 .skills-media-layer {
     position: absolute;
     inset: 0;
     opacity: 0;
+    /* DOM order alone would otherwise always stack data-layer="b" above
+       "a" (later in the DOM), regardless of which one actually happens to
+       be entering — is-visible below overrides this so whichever layer is
+       currently coming in is always the one on top, not whichever one
+       happens to be second in markup. */
+    z-index: 1;
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
-    transition: opacity 0.3s ease;
+    transform: translate(var(--media-in-x, 0%), var(--media-in-y, 50%)) scale(1.25);
+    filter: blur(3px);
+    transition: opacity 0.4s ease, transform 0.4s ease, filter 0.4s ease;
 }
 
 .skills-media-layer.is-visible {
     opacity: 1;
+    z-index: 2;
+    transform: translate(0, 0) scale(1);
+    filter: blur(0);
 }
 
+/* The OUTGOING layer, applied the same instant is-visible is removed from
+   it (skills.js) — without this it would just fall back to the plain
+   resting state above, which uses the ENTERING offset (--media-in-x/y),
+   the same direction as whatever's arriving, not the mirrored direction
+   an outgoing layer should continue away in. --media-out-x/y (skills.js)
+   is always the negation of that same call's --media-in-x/y, so the two
+   layers read as one continuous motion — new arrives from one side as
+   old continues off the opposite side — rather than both drifting the
+   same way. */
+.skills-media-layer.is-exiting {
+    opacity: 0;
+    transform: translate(var(--media-out-x, 0%), var(--media-out-y, -50%)) scale(0.75);
+    filter: blur(3px);
+}
+
+/* Overlaid on the bottom of the image. No scrim behind these anymore — the
+   images are contain-fitted transparent PNGs on the section's own card
+   material (not full-bleed photos these needed a dark gradient to stay
+   legible over), so they just use the same theme-aware capsule styling as
+   .skills-tag everywhere else on the page, which already reads fine
+   against that card material regardless of light/dark mode.
+
+   Own opacity toggle (skills.js, mirroring .skills-image-empty's own),
+   not just left showing whatever the last-viewed skill's tags were —
+   these used to only ever get hidden as a side effect of the old
+   empty-state overlay sitting at a higher z-index than everything
+   (covering them along with the image), which stopped being true once
+   that overlay moved to sit behind the active content instead. */
 .skills-image-tags {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
     padding: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-/* Legibility scrim for the mobile overlay — irrelevant on desktop, where
-   the capsule list no longer sits on top of the image. */
-.skills-scrim {
+.skills-image-tags.is-visible {
+    opacity: 1;
+}
+
+/* Desktop-only empty state — the accordion has a real "nothing selected"
+   state (every capsule collapsed) that the mobile pill row doesn't, so
+   this covers the image/tags entirely rather than defaulting to showing
+   some skill's content as if it were selected. Opaque card material
+   (matching the section's own uniform backdrop), toggled via JS
+   (skills.js) alongside the accordion's open/closed state.
+
+   Sits behind the capsules/tags (z-index: 2/3) but ABOVE .skills-media
+   itself (z-index: 0) — .skills-media has its own opaque background
+   underneath its actual image layers, so being behind THAT specifically
+   would hide this completely regardless of its own opacity/transform;
+   z-index: 1 is the one spot that's behind the active UI while still
+   being visible at all. Scales down, fades, and blurs out together when
+   something becomes active, and reverses the same way when it's hidden
+   again — same treatment as the media layers' own enter/exit, not just a
+   plain opacity fade.
+
+   No background of its own (relies on .skills-media's background showing
+   through instead) — so a media crossfade still in flight can bleed
+   through around the icon/text while this is fading in/out. Accepted
+   tradeoff, not an oversight. */
+.skills-image-empty {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    opacity: 0;
+    transform: scale(0.9);
+    filter: blur(4px);
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease;
+}
+
+.skills-image-empty.is-visible {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+}
+
+.skills-image-empty-illustration {
+    width: 280px;
+    max-width: 70%;
+    height: auto;
+    margin-bottom: 8px;
+}
+
+/* PNG linework is dark-on-transparent, so it reads fine in light mode but
+   goes low-contrast against .skills-image-empty's near-black dark-mode
+   background. invert()+hue-rotate(180deg) flips only the lightness (black
+   linework -> light) while landing the pink/teal accents back near their
+   original hue, instead of shipping a second asset for dark mode. */
+@media (prefers-color-scheme: dark) {
+    .skills-image-empty-illustration {
+        filter: invert(1) hue-rotate(180deg);
+    }
+}
+
+.skills-image-empty-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Desktop shows "Click", mobile shows "Tap" — same 768px cutoff as
+   isMobileViewport() in skills.js. */
+.skills-image-empty-verb-tap {
     display: none;
+}
+
+@media (max-width: 768px) {
+    .skills-image-empty-verb-tap {
+        display: inline;
+    }
+
+    .skills-image-empty-verb-click {
+        display: none;
+    }
+}
+
+.skills-image-empty-text {
+    font-size: 14px;
+    color: var(--text-secondary);
 }
 
 /* Shared text styles used by both the desktop accordion panel and the
@@ -587,9 +823,9 @@ body {
    back to a white/translucent treatment further down, since the mobile
    card floats directly on the image rather than on opaque card material. */
 .skills-overview {
-    font-size: 13.5px;
+    font-size: 15.5px;
     line-height: 1.5;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     margin: 0 0 12px;
 }
 
@@ -617,21 +853,29 @@ body {
 /* ── Desktop: leading-edge accordion ─────────────────────────────────── */
 /* In normal flow now (a flex child of .skills-accordion-column), vertically
    centered via that column's own align-items: center rather than absolute
-   positioning. max-height/overflow-y is a safety net in case content ever
-   exceeds the available height. align-items: flex-start lets collapsed
-   items hug their own content width instead of stretching to the 280px
-   column; .is-open opts back into the full width. */
+   positioning. align-items: flex-start lets collapsed items hug their own
+   content width instead of stretching to the 280px column; .is-open opts
+   back into the full width. No overflow/scroll here (deliberately, even
+   though items can exceed the available height in rare cases) — overflow
+   other than visible on one axis forces the other axis to clip too, per
+   spec, which was cutting off every item's own drop-shadow. */
 .skills-accordion {
     width: 280px;
-    max-height: calc(100% - 48px);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
-    overflow-y: auto;
 }
 
 .skills-accordion-nav-wrap {
+    /* Taken out of flow and pulled to the left of .skills-accordion-column
+       so it sits outside the text-aligned region — in the gutter margin —
+       rather than pushing the capsule list off-alignment with the title. */
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -648,17 +892,44 @@ body {
     pointer-events: auto;
 }
 
+/* Same fogged-glass material as the capsules — a b/w (theme-following)
+   icon on top via currentColor rather than a fixed white glyph on a dark
+   dot, now that these no longer sit on the always-dark mobile scrim. */
+.skills-accordion-nav,
+.skills-accordion-close {
+    /* Solved so this composites to ~#EBEBF0 over the section's own
+       --card-background (#f5f5f7) — the previous white tint at this same
+       alpha ended up lighter than the backdrop instead of the darker
+       "material" look wanted here. */
+    background: rgba(227, 227, 234, 0.55);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    color: var(--text-primary);
+}
+
+@media (prefers-color-scheme: dark) {
+
+    .skills-accordion-nav,
+    .skills-accordion-close {
+        background: rgba(255, 255, 255, 0.1);
+    }
+}
+
 .skills-accordion-nav {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.35);
-    color: #fff;
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+}
+
+/* Mobile-only content (see .skills-accordion-nav-label override below) —
+   desktop's steppers are plain icon buttons. */
+.skills-accordion-nav-label {
+    display: none;
 }
 
 /* Single close control for the whole box, top-right of .skills-stack —
@@ -671,8 +942,6 @@ body {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.35);
-    color: #fff;
     border: none;
     display: flex;
     align-items: center;
@@ -688,26 +957,42 @@ body {
     pointer-events: auto;
 }
 
-/* Items are real card material now, matching every other card on the
-   site — not a translucent glass tint. */
+/* Fogged glass over the section's now-uniform card-color backdrop —
+   translucent + blurred rather than flat matching card material, so the
+   capsules still read as their own floating layer instead of disappearing
+   into the background behind them. */
 .skills-accordion-item {
     /* border-radius is fixed at exactly half of .skills-accordion-head's
-       fixed height (52px / 2 = 26px) — not recalculated when the item
+       fixed height (56px / 2 = 28px) — not recalculated when the item
        grows taller on expand. That constant is what makes it read as a
        true capsule while collapsed (radius = half height = fully round
        ends) and cleanly settle into an ordinary rounded rectangle once
        expanded, instead of staying pill-shaped at a much taller height. */
     flex-shrink: 0;
     max-width: 100%;
-    border-radius: 26px;
+    border-radius: 28px;
+    /* Needed to clip content to the rounded shape while the width/height
+       animate. */
     overflow: hidden;
-    background: var(--card-background);
+    /* Solved so this composites to ~#EBEBF0 over the section's own
+       --card-background (#f5f5f7) — the previous white tint at this same
+       alpha ended up lighter than the backdrop instead of the darker
+       "material" look wanted here. */
+    background: rgba(227, 227, 234, 0.55);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     /* --skills-item-w is measured once in JS (the head's natural content
        width — CSS alone can't transition to/from auto/shrink-to-fit) so
        this can animate the same way the height does. Falls back to auto
        for the instant before JS runs. */
     width: var(--skills-item-w, auto);
     transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+    .skills-accordion-item {
+        background: rgba(255, 255, 255, 0.1);
+    }
 }
 
 .skills-accordion-item.is-open {
@@ -717,9 +1002,9 @@ body {
 .skills-accordion-head {
     display: flex;
     align-items: center;
-    gap: 10px;
-    height: 52px;
-    padding: 0 28px 0 18px;
+    gap: 11px;
+    height: 56px;
+    padding: 0 26px 0 20px;
     background: none;
     border: none;
     font: inherit;
@@ -727,32 +1012,52 @@ body {
     color: var(--text-primary);
     cursor: pointer;
     white-space: nowrap;
+    /* Fades out on mobile while .skills-accordion-head-arrow (below) is
+       covering it, a no-op on desktop where that never happens. */
+    transition: opacity 0.2s ease;
 }
 
 .skills-accordion-icon {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
-    color: var(--text-secondary);
+    color: var(--text-primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 1;
-    transition: opacity 0.2s ease;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Mobile-only (see .is-before-open/.is-after-open in the mobile media
+   query) — desktop's up/down stepper is a separate, dedicated button, so
+   no item ever needs to show a chevron itself here. A plain overlay
+   sibling of .skills-accordion-head, not a child of it (see skills.js) —
+   its own padding/justify-content/opacity can never affect the head's own
+   box, or by extension the item's own measured collapsed width (head has
+   to stay free to shrink-wrap to just its icon+name for
+   pinCollapsedWidths, skills.js, to measure that correctly). */
+.skills-accordion-head-arrow {
+    display: none;
+}
+
+.skills-accordion-chevron {
+    color: var(--text-primary);
 }
 
 .skills-accordion-icon svg {
     display: block;
 }
 
-/* The focused item's own plus hides — closing is handled by the single
-   .skills-accordion-close control for the whole box, not per item. */
+/* The focused item's own plus rotates into an x — its head is still the
+   same toggle button (clicking it again closes via toggleAccordion in
+   skills.js), so this doubles as that item's own close affordance instead
+   of relying solely on the single .skills-accordion-close control. */
 .skills-accordion-item.is-open .skills-accordion-icon {
-    opacity: 0;
+    transform: rotate(45deg);
 }
 
 .skills-accordion-name {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
 }
 
@@ -796,14 +1101,16 @@ body {
 }
 
 .skills-accordion-panel {
-    padding: 0 28px 16px 18px;
+    padding: 0 26px 16px 20px;
 }
 
-/* ── Mobile pill row / floating card / nav arrows ────────────────────
-   Hidden on desktop; shown by the 768px override below. */
-.skills-pillrow,
-.skills-card,
-.skills-card-nav {
+/* Same tags every skill already shows via .skills-image-tags on desktop —
+   duplicated here inside the panel itself for mobile, which has no
+   separate image-overlay tags row (the accordion column overlays the
+   bottom of the image there instead of sitting beside it, so a second
+   tags row anchored to the same spot would just collide with it). Hidden
+   on desktop to avoid showing the same tags twice. */
+.skills-accordion-tags {
     display: none;
 }
 
@@ -1134,29 +1441,330 @@ body {
         font-size: 14px;
     }
 
-    /* Skills — the desktop two-panel layout (capsule column + image card)
-       is swapped out entirely for the original overlay model: a shared
-       background image with a bottom pill row that expands a single
-       floating card. Image goes much taller (3:4) so there's real room
-       for the row plus an expanded card without either feeling cramped. */
+    /* Skills — same accordion component as desktop (no separate pill row /
+       floating card here anymore); CSS just repositions it. Desktop lays
+       the capsule column out beside the image via grid-template-columns;
+       here the column overlays the bottom of the image instead, since
+       there's no room for a leading column at phone widths. Image goes
+       much taller (3:4) so there's real room for the overlay. */
     .skills-stack {
-        /* Back to a plain positioning context, not a grid — .skills-media,
-           .skills-pillrow, .skills-card etc. all go back to being
-           absolutely-positioned children of this directly, exactly as
-           before the desktop two-panel layout existed. */
         display: block;
+        /* The padding-left added above is a desktop-only concern (aligning
+           the capsule column with the title's text) — full bleed on both
+           edges here. */
+        padding-left: 0;
+        /* Safety margin against the page itself becoming horizontally
+           scrollable — .skills-accordion clips its own content via its
+           own overflow-x, but this stack already spans exactly the true
+           viewport width (full-bleed), so its own edge is a reasonable
+           backstop too. */
+        overflow: hidden;
     }
 
-    .skills-accordion-column,
-    .skills-accordion-close {
+    /* Full width by default so the collapsed row below can actually
+       scroll its capsules flush to the true screen edges — inset only
+       once a skill is focused (.has-open-item), matching the row's own
+       padding toggle below so the total inset from the true edge stays
+       the same (16px) either way. */
+    .skills-accordion-column {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 16px;
+        z-index: 2;
+    }
+
+    .skills-accordion-column.has-open-item {
+        left: 16px;
+        right: 16px;
+    }
+
+    /* Desktop-only up/down stepper — on mobile, the item immediately
+       before/after the focused one plays this role instead (see
+       .is-before-open/.is-after-open below), so tapping through the row IS
+       the prev/next control; no separate buttons needed. */
+    .skills-accordion-nav-wrap {
         display: none;
     }
 
+    /* A horizontal scrolling strip of collapsed capsules — same shape as
+       the row this replaced. flex-end keeps every capsule's bottom edge on
+       one line. Collapsed width is untouched from the base rules
+       (shrink-to-fit), same hug-the-text sizing as desktop, just laid out
+       sideways. The 16px side padding (rather than insetting the column
+       itself, as .has-open-item does) is what lets the first/last capsule
+       still scroll flush to the true edge instead of stopping short of it
+       — the scrollable area is the full-width column, padding just gives
+       the resting position some breathing room.
+
+       Every item — focused or not — stays a normal, always-in-flow flex
+       child of this row for its entire life; nothing here ever switches
+       to position: absolute. That's the whole point: a flex child always
+       has a real, current width for a CSS transition to animate from, so
+       "make room for the growing neighbor" and "keep the focused item
+       centered" come from the browser's own flex reflow and scroll
+       position instead of hand-computed transform offsets — see
+       skills.js's keepCentered for the one piece that still needs JS (a
+       growing/shrinking item drifts off-center as its width changes,
+       simply because scroll position doesn't know to follow it). */
+    .skills-accordion {
+        width: 100%;
+        flex-direction: row;
+        align-items: flex-end;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding: 0 16px;
+    }
+
+    .skills-accordion::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Generated flex items, first/last in source order — without these,
+       centering the first skill would need scrollLeft to go negative,
+       which isn't possible, so it'd end up flush against the start
+       instead of centered. 40px is exactly half of the 80px (40+40)
+       --skills-open-w already reserves on each side of a focused item, so
+       scrolled all the way to the start, that alone is enough room to
+       bring the first item to true center. Grows from 0 in step with
+       everything else (has-open-item below, same undelayed 0.35s) rather
+       than sitting there permanently — nothing to center while the row's
+       just a plain scrollable strip of collapsed capsules. */
+    .skills-accordion::before {
+        content: '';
+        flex: 0 0 0;
+        transition: flex-basis 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0s;
+    }
+
+    .skills-accordion.has-open-item::before {
+        flex-basis: 40px;
+    }
+
+    /* The trailing spacer's job is different — not centering the LAST
+       item specifically, just guaranteeing scrollLeft can reach far enough
+       for ANY item's target, immediately. skills.js scrolls straight to a
+       precomputed final position instead of chasing live geometry — but
+       right when that starts, the row's real scrollable width is still
+       whatever it was a moment ago, and the browser clamps any scrollLeft
+       beyond what currently exists. Snapping this arbitrarily large
+       guarantees there's always enough room regardless of which skill is
+       targeted — on open AND on close (scrollToClosedIndex, skills.js,
+       needs the same guarantee in reverse: room to reach a target further
+       along than the still-fully-open row's current layout implies).
+       No transition at all, in EITHER direction, unlike the leading one —
+       this is never actually visible (past the last real item, clipped by
+       overflow: hidden the moment something's focused), so animating it
+       only meant its shrink-on-close was competing with the scroll
+       animation for scrollLeft: the browser clamping scrollLeft down as
+       this spacer's own width dropped, fighting the JS-driven value being
+       set the same instant, which was the actual cause of jitter right as
+       something closed. */
+    .skills-accordion::after {
+        content: '';
+        flex: 0 0 0;
+    }
+
+    .skills-accordion.has-open-item::after {
+        flex-basis: 9999px;
+    }
+
+    /* Matches .skills-accordion-column's own inset above — the column
+       provides the 16px once something's focused, so the row's own
+       padding drops to 0 rather than doubling it.
+
+       overflow-x: hidden is what actually stops the user from dragging
+       this around by hand once something's focused — touch-action alone
+       only blocks touch-driven panning, not trackpad/wheel-driven
+       horizontal scrolling (which fires as plain wheel events, not touch
+       ones), so scrolling was still possible that way. hidden still lets
+       JS keep setting scrollLeft freely — overflow: hidden only removes
+       the USER's ability to scroll (no scrollbar, no wheel/touch/drag
+       input), it doesn't stop an element from being programmatically
+       scrolled — so keepCentered (skills.js) is unaffected. This is a
+       different toggle than the old position: absolute system's
+       auto/visible switch, which was what actually reset scrollLeft to 0
+       (removing overflow entirely, not just hiding scroll input, is what
+       caused that) — auto/hidden doesn't do that. touch-action stays too,
+       redundant with hidden for touch specifically but still the more
+       explicit signal for it, and still what keeps vertical page
+       scrolling working through a touch that starts on this row. */
+    .skills-accordion.has-open-item {
+        padding: 0;
+        overflow-x: hidden;
+        touch-action: pan-y;
+    }
+
+    /* Collapsed width transition — undelayed, so it shrinks back down in
+       step with the previously focused item's own height collapsing
+       (its body's grid-template-rows, see the base .skills-accordion-body
+       rule below), instead of waiting for that to finish first. Safe to
+       run together because the body below is pinned to a constant width
+       the whole time, so the outer item's own width changing doesn't
+       reflow its text. Growing back up to full width (below) is a
+       separate override with the same duration/delay, so opening and
+       closing move at the same pace. */
+    .skills-accordion-item {
+        transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0s;
+    }
+
+    /* The one rule this component now hinges on: once something's
+       focused, EVERY item — the focused one and every other skill alike —
+       grows to the same full width, undelayed (so it happens in step with
+       the focused item's own growth, not trailing behind it). What used
+       to be four separate roles (open/peek/far, each with their own
+       position + transform math to fake a "peek") collapses into "every
+       card is this wide, and one of them also gets extra height" — see
+       .is-open below for that part, and .is-before-open/.is-after-open
+       further down for how a non-focused card reads at this width. */
+    .skills-accordion.has-open-item .skills-accordion-item {
+        width: var(--skills-open-w, auto);
+        transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0s;
+    }
+
+    /* Pinned to the SAME constant --skills-open-w the outer item itself
+       animates to/from (not a live percentage of it, and not the
+       desktop-shared rule's --skills-item-w either) — the body's own
+       internal width never actually changes here, regardless of what the
+       outer item's width is doing at that instant. That's what makes it
+       safe for grid-template-rows (height) and the outer item's own width
+       transition to run fully together below: the panel's text is always
+       laid out at this one fixed width, so there's nothing for it to
+       reflow into mid-transition, and the row's 1fr height target stays
+       stable instead of recomputing off a moving target. The outer item's
+       own overflow: hidden is what clips this down to whatever the
+       (possibly narrower) capsule currently looks like. Selector is
+       .skills-accordion-prefixed, not just .skills-accordion-item, purely
+       to out-specificity the desktop-shared .is-open .skills-accordion-body
+       rule's own width: 280px (styles.css, up top) — this needs to win for
+       is-open items too, not just non-open ones. */
+    .skills-accordion .skills-accordion-item .skills-accordion-body {
+        width: var(--skills-open-w, auto);
+    }
+
+    /* Fully simultaneous with the outer item's own width transition above
+       (no relative delay either way) — safe now that the body's width
+       (above) never changes, so there's no reflow to sequence around.
+       This also directly benefits stepping between skills (tapping an
+       arrow): width never actually changes there at all (every item's
+       already at the shared open width), so this is the ONLY transition
+       running, and the previously-focused item's own collapse (base
+       .skills-accordion-body rule, same 0.35s/no-delay pair) now runs in
+       lockstep with it — hide and show happen together instead of one
+       waiting on the other. */
+    .skills-accordion-item.is-open .skills-accordion-body {
+        transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1) 0s;
+    }
+
+    /* Text hides/shows instantly rather than fading or riding along with
+       the height collapse — since the body above is always full width now
+       (not narrowing with the outer item), leaving this to just sit there
+       while grid-template-rows collapsed would look like the text getting
+       visibly squeezed/clipped away instead of a clean, empty capsule
+       shrinking. Instant in both directions, not just on hide, so opening
+       and closing read the same way. */
+    .skills-accordion-item .skills-accordion-panel {
+        opacity: 0;
+        transition: opacity 0s linear 0s;
+    }
+
+    .skills-accordion-item.is-open .skills-accordion-panel {
+        opacity: 1;
+    }
+
+    /* Positioning context for .skills-accordion-head-arrow below — it
+       overlays the whole item, not just the head, so it needs an anchor
+       that isn't affected by the head's own (shrink-wrapped) size. */
+    .skills-accordion-item {
+        position: relative;
+    }
+
+    /* A plain overlay, positioned independently of .skills-accordion-head
+       (see the shared, non-mobile rule) rather than sized/laid out as
+       part of it — head stays free to shrink-wrap to just its icon+name,
+       which is what its own width needs to keep meaning "this item's
+       natural collapsed width" (pinCollapsedWidths, skills.js). Matches
+       the head's own height/position but spans the item's full width,
+       which head itself doesn't. pointer-events off while invisible so
+       taps fall through to the head button underneath it. */
+    .skills-accordion-head-arrow {
+        display: flex;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        align-items: center;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 1;
+        transition: opacity 0.2s ease;
+    }
+
+    /* Crossfade gated behind .is-arrow, not is-before-open/is-after-open
+       directly — those apply immediately (skills.js), in step with the
+       card's own width, but the content swap itself is added on a short
+       delay (also skills.js) so the icon/name don't flip to a chevron the
+       instant the card starts growing, well before it's actually shrunk
+       down toward arrow-sized yet. */
+    .skills-accordion-item.is-arrow .skills-accordion-head {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .skills-accordion-item.is-arrow .skills-accordion-head-arrow {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Positioned toward whichever edge faces the focused card (its
+       trailing edge if this item sits before it, leading edge if after).
+       Padding + chevron width together have to fit inside the ~32px
+       actually visible (40px --skills-open-w reserve minus the 8px flex
+       gap) — 8+20 = 28px still does, with a little margin to spare. */
+    .skills-accordion-item.is-before-open .skills-accordion-head-arrow {
+        padding: 0 8px 0 0;
+        justify-content: flex-end;
+    }
+
+    .skills-accordion-item.is-after-open .skills-accordion-head-arrow {
+        padding: 0 0 0 8px;
+        justify-content: flex-start;
+    }
+
+    .skills-accordion-chevron {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .skills-accordion-chevron svg {
+        display: block;
+    }
+
+    .skills-accordion-item.is-before-open .skills-accordion-chevron svg {
+        transform: rotate(180deg);
+    }
+
+    /* Tags are hidden for now — undecided where they'll end up on mobile,
+       and they don't fit the now-more-compact focused view. */
+    .skills-accordion-tags {
+        display: none;
+    }
+
+    .skills-accordion-name {
+        font-size: 15px;
+    }
+
+    .skills-overview {
+        font-size: 14px;
+    }
+
     /* .skills-image-panel dissolves (no box of its own) so #skillsMedia
-       and .skills-image-tags behave as if they were direct children of
-       .skills-stack again — but .skills-image-tags itself is still
-       desktop-only content (mobile tags live in the floating card's own
-       #skillsTags), so hide it explicitly. */
+       behaves as if it were a direct child of .skills-stack again. */
     .skills-image-panel {
         display: contents;
     }
@@ -1165,171 +1773,43 @@ body {
         display: none;
     }
 
-    /* Legibility scrim behind the pill row / floating card — this is
-       where it actually earns its keep, unlike on desktop. */
-    .skills-scrim {
-        display: block;
-        position: absolute;
-        inset: 0;
-        z-index: 1;
-        pointer-events: none;
-        background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
-    }
-
-    /* Restore the white/translucent treatment for these shared classes —
-       the mobile card floats directly on the image, not on opaque card
-       material like the desktop accordion does. */
-    .skills-overview {
-        color: rgba(255, 255, 255, 0.85);
-    }
-
-    .skills-tag {
-        color: #fff;
-        background: rgba(255, 255, 255, 0.18);
-    }
-
     .skills-media {
-        aspect-ratio: 3 / 4;
-        border-radius: 20px;
+        /* No aspect-ratio here on purpose — the box doesn't need to match
+           a tall/skinny image's own ratio, contain (shared rule) just
+           letterboxes it. This element (with the accordion overlaid on
+           top of it) is the interactive component itself.
+
+           Height is the real remaining space, not an arbitrary vh guess:
+           one full screen (100vh), minus each piece of fixed chrome above
+           it. If any of these values changes, this needs to change with
+           it — there's nothing enforcing they stay in sync automatically
+           (--nav-height aside, which is a real shared variable, not a
+           guess). --skills-media-h is set once here and reused below (and
+           by .skills-media-layer, which inherits it) so the height and
+           the gradient-placeholder sizing can never drift out of sync
+           with each other. */
+        --skills-top-gap: 32px; /* space between the fixed nav bar and the title */
+        --skills-title-h: 60px; /* .section-title's 40px font-size floor x the body's 1.5 line-height */
+        --skills-title-gap: 32px; /* .section-title's margin-bottom, mobile override — the actual spacing between the title and this element */
+        --skills-media-h: calc(100vh - var(--nav-height) - var(--skills-top-gap) - var(--skills-title-h) - var(--skills-title-gap));
+        height: var(--skills-media-h);
+        max-height: var(--skills-media-h);
+        /* Plain contain now — real images have their own intrinsic
+           dimensions, so this no longer needs the explicit-size stand-in
+           the gradient placeholders required. */
+        background-size: contain;
+        /* Back to top-anchored (the shared rule centers it, desktop-only —
+           see there) with some clearance, not flush against the very top
+           — .skills-accordion-close sits at top: 24px, right: 24px, 36px
+           tall, so an image starting right at y: 0 would sit partly
+           underneath it. 56px clears that (24 + 36) with a little room to
+           spare. */
+        background-position: center 56px;
     }
 
-    .skills-pillrow {
-        display: flex;
-        position: absolute;
-        left: 16px;
-        right: 16px;
-        bottom: 16px;
-        z-index: 2;
-        gap: 8px;
-        overflow-x: auto;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-        transition: opacity 0.25s ease;
-    }
-
-    .skills-pillrow::-webkit-scrollbar {
-        display: none;
-    }
-
-    .skills-pillrow.is-hidden {
-        opacity: 0;
-        pointer-events: none;
-    }
-
-    .skills-pill {
-        flex: 0 0 auto;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 16px;
-        border-radius: 980px;
-        background: rgba(0, 0, 0, 0.45);
-        color: #fff;
-        border: none;
-        font: inherit;
-        font-size: 14px;
-        font-weight: 600;
-        white-space: nowrap;
-        cursor: pointer;
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-    }
-
-    .skills-pill-hint {
-        font-size: 13px;
-        line-height: 1;
-        flex-shrink: 0;
-    }
-
-    /* Nav arrows sit outside the card entirely — fixed near the top of the
-       image so they never overlap the card regardless of how tall it grows
-       to fit its content — visible only while a card is expanded. */
-    .skills-card-nav {
-        display: flex;
-        position: absolute;
-        top: 20px;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        background: rgba(0, 0, 0, 0.4);
-        color: #fff;
-        border: none;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        z-index: 4;
-        cursor: pointer;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.25s ease;
-    }
-
-    .skills-card-nav.is-visible {
-        opacity: 1;
-        pointer-events: auto;
-    }
-
-    .skills-card-nav-prev {
-        left: 16px;
-    }
-
-    .skills-card-nav-next {
-        right: 16px;
-    }
-
-    /* The card itself hugs its content via the same grid-rows technique as
-       the desktop accordion, rather than filling a fixed/arbitrary height —
-       .skills-card-inner's overflow: hidden is what makes the 0fr collapse
-       actually clip during the transition. */
-    .skills-card {
-        display: grid;
-        grid-template-rows: 0fr;
-        position: absolute;
-        left: 16px;
-        right: 16px;
-        bottom: 16px;
-        z-index: 3;
-        border-radius: 20px;
-        background: rgba(0, 0, 0, 0.55);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .skills-card.is-expanded {
-        grid-template-rows: 1fr;
-    }
-
-    .skills-card-inner {
-        position: relative;
-        overflow: hidden;
-        padding: 18px;
-    }
-
-    .skills-card-title {
-        font-size: 18px;
-        font-weight: 700;
-        letter-spacing: -0.01em;
-        color: #fff;
-        margin: 0 0 6px;
-        padding-right: 36px;
-    }
-
-    .skills-card-close {
-        position: absolute;
-        top: 14px;
-        right: 14px;
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.15);
-        color: #fff;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        cursor: pointer;
+    .skills-media-layer {
+        background-size: contain;
+        background-position: center 56px;
     }
 
     /* About */
