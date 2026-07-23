@@ -43,7 +43,10 @@
       "Bash(python3 -c ' *)",
       "Bash(sips -g all \"/Users/milocassarino/Desktop/Gemini_Generated_Image_wz6bjawz6bjawz6b.png\")",
       "Bash(magick identify *)",
-      "Bash(cp \"/Users/milocassarino/Desktop/Gemini_Generated_Image_wz6bjawz6bjawz6b.png\" \"/Users/milocassarino/Developer/mainWebsite/images/Skills/EmptyStateExploded.png\" && ls -la \"/Users/milocassarino/Developer/mainWebsite/images/Skills/EmptyStateExploded.png\")"
+      "Bash(cp \"/Users/milocassarino/Desktop/Gemini_Generated_Image_wz6bjawz6bjawz6b.png\" \"/Users/milocassarino/Developer/mainWebsite/images/Skills/EmptyStateExploded.png\" && ls -la \"/Users/milocassarino/Developer/mainWebsite/images/Skills/EmptyStateExploded.png\")",
+      "Bash(git restore *)",
+      "Bash(git merge *)",
+      "Bash(git commit *)"
     ]
   }
 }
