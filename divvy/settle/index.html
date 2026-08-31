@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Settle up · Divvy</title>
+
+<!-- These links are private by nature (see the fragment note in the script below) and there is
+     nothing at this URL without one, so keep it out of search results entirely. -->
+<meta name="robots" content="noindex, nofollow">
+
+<!-- Link previews are generated from static HTML by iMessage/SMS/Slack — they never execute the
+     page's JS, so a preview can only ever show this generic card, never the amounts. That's the
+     desired outcome: the split shouldn't be readable from a chat list. -->
+<meta property="og:title" content="Settle up on Divvy">
+<meta property="og:description" content="See what you owe and pay it back in a tap.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+
+<link rel="icon" href="/images/Icons/Divvy_Icon.png">
+
+<style>
+/* Self-contained on purpose: css/styles.css carries the portfolio nav/hero/skills layout and
+   css/project.css is scaffolding for the projects/*.html detail pages — neither applies to a
+   standalone utility page. The colour tokens and font stack below are copied from
+   css/styles.css so it still reads as part of mgcf1.com. */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --background: #ffffff;
+    --text-primary: #1d1d1f;
+    --text-secondary: #86868b;
+    --card-background: #f5f5f7;
+    --divider: rgba(0, 0, 0, 0.08);
+    --row-active: rgba(0, 0, 0, 0.04);
+    /* Divvy's own identity, matching the gradient in data/projects.js */
+    --divvy-from: #43e97b;
+    --divvy-to: #38f9d7;
+    --divvy-ink: #0a6b3d;
+    --venmo: #008CFF;
+    --cashapp: #00C244;
+    --applecash: #1d1d1f;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #002400;
+        --text-primary: #f5f5f7;
+        --text-secondary: #86868b;
+        --card-background: #143214;
+        --divider: rgba(255, 255, 255, 0.12);
+        --row-active: rgba(255, 255, 255, 0.06);
+        --divvy-ink: #43e97b;
+        --applecash: #f5f5f7;
+    }
+}
+
+html { background-color: var(--background); -webkit-text-size-adjust: 100%; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: var(--background);
+    color: var(--text-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    padding: 32px 20px calc(40px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    justify-content: center;
+}
+
+.sheet { width: 100%; max-width: 520px; }
+
+/* ---------- Header ---------- */
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+}
+
+.brand img {
+    width: 30px;
+    height: 30px;
+    border-radius: 22%;
+    display: block;
+}
+
+.brand span {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.headline { margin-bottom: 24px; }
+
+.headline h1 {
+    font-size: 30px;
+    line-height: 1.15;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+}
+
+.headline p {
+    margin-top: 6px;
+    color: var(--text-secondary);
+    font-size: 15px;
+}
+
+/* ---------- People list ---------- */
+
+.section-label {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.people {
+    list-style: none;
+    background: var(--card-background);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.person + .person { border-top: 1px solid var(--divider); }
+
+.person-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    background: none;
+    border: 0;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.person-row:hover { background: var(--row-active); }
+.person-row:focus-visible { outline: 2px solid var(--divvy-ink); outline-offset: -2px; }
+
+.person-name {
+    flex: 1;
+    font-size: 17px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.person-amount {
+    font-size: 17px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--divvy-ink);
+}
+
+.chev {
+    width: 13px;
+    height: 13px;
+    flex: none;
+    border-right: 2px solid var(--text-secondary);
+    border-bottom: 2px solid var(--text-secondary);
+    transform: rotate(45deg) translate(-2px, -2px);
+    transition: transform 0.2s ease;
+}
+
+.person-row[aria-expanded="true"] .chev { transform: rotate(225deg) translate(-3px, -3px); }
+
+.person-pay { padding: 2px 18px 18px; }
+.person-pay[hidden] { display: none; }
+
+.payer + .payer { margin-top: 18px; }
+
+.payer-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+}
+
+.pay-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.pay-btn {
+    flex: 1 1 auto;
+    min-width: 130px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    color: #ffffff;
+    background: var(--text-secondary);
+    transition: opacity 0.15s ease;
+}
+
+.pay-btn:active { opacity: 0.75; }
+.pay-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.85); flex: none; }
+
+.pay-btn.venmo { background: var(--venmo); }
+.pay-btn.cashapp { background: var(--cashapp); }
+.pay-btn.applecash { background: var(--applecash); color: var(--background); }
+.pay-btn.applecash .dot { background: var(--background); opacity: 0.8; }
+
+.pay-note {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.handle-only {
+    font-size: 15px;
+    color: var(--text-secondary);
+}
+
+/* ---------- Footer / states ---------- */
+
+.foot {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid var(--divider);
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.foot a { color: inherit; }
+
+.state {
+    background: var(--card-background);
+    border-radius: 16px;
+    padding: 28px 22px;
+    text-align: center;
+}
+
+.state h2 { font-size: 19px; font-weight: 600; margin-bottom: 8px; }
+.state p { font-size: 15px; color: var(--text-secondary); }
+
+.settled { font-size: 34px; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<main class="sheet">
+    <div class="brand">
+        <img src="/images/Icons/Divvy_Icon.png" alt="">
+        <span>Divvy</span>
+    </div>
+
+    <div class="headline">
+        <h1 id="title">Settle up</h1>
+        <p id="subtitle"></p>
+    </div>
+
+    <div id="content"></div>
+
+    <p class="foot" id="foot">
+        Split with <a href="https://divvy.mgcf1.com">Divvy</a>. Everything on this page came out of
+        the link itself — nothing was sent to a server.
+    </p>
+</main>
+
+<script>
+(function () {
+    'use strict';
+
+    /* Highest payload version this page knows how to render. The scheme doc reserves `v` for
+       exactly this: a newer app can ship a new shape and old pages will say so plainly instead
+       of rendering something half-wrong. */
+    var SUPPORTED_VERSION = 1;
+
+    /* Sanity ceilings. A hand-edited or corrupted link shouldn't be able to make the page build
+       ten thousand DOM nodes. */
+    var MAX_PEOPLE = 200;
+    var MAX_PAYERS = 20;
+
+    var titleEl = document.getElementById('title');
+    var subtitleEl = document.getElementById('subtitle');
+    var contentEl = document.getElementById('content');
+
+    // ---------- helpers ----------
+
+    /* Every string in the payload is attacker-controllable — the whole payload is just whatever
+       is after the `#`. So payload text only ever reaches the DOM through textContent, never
+       innerHTML, and this helper is the only way this file builds an element. */
+    function el(tag, className, text) {
+        var node = document.createElement(tag);
+        if (className) { node.className = className; }
+        if (text !== undefined && text !== null) { node.textContent = String(text); }
+        return node;
+    }
+
+    function money(cents) {
+        return (cents / 100).toLocaleString('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function dollarsForURL(cents) {
+        return (cents / 100).toFixed(2);
+    }
+
+    /* Handles go straight into a URL path/query, so they're restricted to the characters Venmo
+       and Cash App actually allow. Anything else is treated as "not set" rather than escaped and
+       passed along — a handle that needs escaping is a handle that isn't going to work anyway. */
+    function cleanHandle(value) {
+        if (typeof value !== 'string') { return null; }
+        var handle = value.trim().replace(/^[@$]+/, '');
+        return /^[A-Za-z0-9_.-]{1,64}$/.test(handle) ? handle : null;
+    }
+
+    function cleanPhone(value) {
+        if (typeof value !== 'string') { return null; }
+        var phone = value.replace(/[^\d+]/g, '');
+        return /^\+?\d{7,15}$/.test(phone) ? phone : null;
+    }
+
+    function cleanName(value, fallback) {
+        if (typeof value !== 'string') { return fallback; }
+        var name = value.trim();
+        return name.length ? name.slice(0, 60) : fallback;
+    }
+
+    function isCents(value) {
+        return typeof value === 'number' && isFinite(value) && value >= 0 && Math.floor(value) === value;
+    }
+
+    // ---------- decode ----------
+
+    /* Base64URL → JSON. The payload lives in the fragment specifically because a fragment is
+       never transmitted in the HTTP request: the handles, phone numbers and amounts below never
+       reach this server or its access logs, and never would even if the hosting changed. */
+    function decode(hash) {
+        var raw = hash.replace(/^#/, '').trim();
+        if (!raw) { return null; }
+        var padded = raw.replace(/-/g, '+').replace(/_/g, '/');
+        padded += '='.repeat((4 - padded.length % 4) % 4);
+        var binary = atob(padded);
+        /* atob yields one byte per char; the payload is UTF-8, so names with accents or emoji
+           have to be decoded rather than read as Latin-1. */
+        var bytes = new Uint8Array(binary.length);
+        for (var i = 0; i < binary.length; i++) { bytes[i] = binary.charCodeAt(i); }
+        var json = new TextDecoder('utf-8').decode(bytes);
+        return JSON.parse(json);
+    }
+
+    function normalize(payload) {
+        if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+            throw new Error('malformed');
+        }
+        if (payload.v !== SUPPORTED_VERSION) {
+            var err = new Error('version');
+            err.code = 'version';
+            throw err;
+        }
+
+        var payers = (Array.isArray(payload.payers) ? payload.payers : [])
+            .slice(0, MAX_PAYERS)
+            .map(function (payer, index) {
+                payer = payer && typeof payer === 'object' ? payer : {};
+                return {
+                    name: cleanName(payer.n, 'Someone'),
+                    venmo: cleanHandle(payer.ve),
+                    cashApp: cleanHandle(payer.ca),
+                    applePay: payer.ap === true,
+                    phone: cleanPhone(payer.ph),
+                    key: index
+                };
+            });
+
+        var people = (Array.isArray(payload.people) ? payload.people : [])
+            .slice(0, MAX_PEOPLE)
+            .filter(function (person) {
+                return person && typeof person === 'object' && isCents(person.o);
+            })
+            .map(function (person) {
+                return { name: cleanName(person.n, 'Someone'), owes: person.o };
+            });
+
+        return {
+            title: cleanName(payload.t, null),
+            total: isCents(payload.total) ? payload.total : null,
+            payers: payers,
+            people: people
+        };
+    }
+
+    // ---------- payment links ----------
+
+    function noteText(data) {
+        return data.title ? data.title : 'Divvy split';
+    }
+
+    function venmoURL(payer, cents, note) {
+        return 'https://venmo.com/' + encodeURIComponent(payer.venmo) +
+            '?txn=pay&amount=' + dollarsForURL(cents) +
+            '&note=' + encodeURIComponent(note);
+    }
+
+    function cashAppURL(payer, cents) {
+        /* cash.app/$cashtag/AMOUNT is Cash App's own prefill format — it opens the app on a
+           phone and the web payment page on a desktop, so one href covers both. */
+        return 'https://cash.app/$' + encodeURIComponent(payer.cashApp) + '/' + dollarsForURL(cents);
+    }
+
+    function appleCashURL(payer, cents, note) {
+        /* Apple Cash has no public payment URL and no way to prefill an amount — payments happen
+           inside Messages. The best this page can do is open a message to the payer with the
+           amount written out, which is also why the scheme carries `ph` only when `ap` is true.
+           The `?&body=` form is the one that works on both iOS and Android. */
+        var body = 'Sending you ' + money(cents) + ' for ' + note + ' via Apple Cash';
+        return 'sms:' + payer.phone + '?&body=' + encodeURIComponent(body);
+    }
+
+    function payButtons(payer, cents, note) {
+        var wrap = el('div', 'pay-buttons');
+        var added = 0;
+
+        function add(className, label, href) {
+            var link = el('a', 'pay-btn ' + className);
+            link.href = href;
+            link.rel = 'noopener noreferrer';
+            link.appendChild(el('span', 'dot'));
+            link.appendChild(el('span', null, label));
+            wrap.appendChild(link);
+            added++;
+        }
+
+        if (payer.venmo) { add('venmo', 'Venmo', venmoURL(payer, cents, note)); }
+        if (payer.cashApp) { add('cashapp', 'Cash App', cashAppURL(payer, cents)); }
+        if (payer.applePay && payer.phone) { add('applecash', 'Apple Cash', appleCashURL(payer, cents, note)); }
+
+        return added ? wrap : null;
+    }
+
+    // ---------- render ----------
+
+    function renderPerson(person, data, note, autoExpand) {
+        var item = el('li', 'person');
+
+        var row = el('button', 'person-row');
+        row.type = 'button';
+        row.setAttribute('aria-expanded', autoExpand ? 'true' : 'false');
+        row.appendChild(el('span', 'person-name', person.name));
+        row.appendChild(el('span', 'person-amount', money(person.owes)));
+        row.appendChild(el('span', 'chev'));
+
+        var panel = el('div', 'person-pay');
+        panel.hidden = !autoExpand;
+
+        data.payers.forEach(function (payer) {
+            var group = el('div', 'payer');
+            group.appendChild(el('p', 'payer-label', 'Pay ' + payer.name));
+            var buttons = payButtons(payer, person.owes, note);
+            if (buttons) {
+                group.appendChild(buttons);
+            } else {
+                group.appendChild(el('p', 'handle-only',
+                    payer.name + ' hasn’t added a payment method — ask them how they’d like to be paid.'));
+            }
+            panel.appendChild(group);
+        });
+
+        if (data.payers.length > 1) {
+            panel.appendChild(el('p', 'pay-note',
+                'Pay whichever is easiest — send the whole ' + money(person.owes) + ' to one of them, then tell the others.'));
+        }
+
+        row.addEventListener('click', function () {
+            var open = row.getAttribute('aria-expanded') === 'true';
+            row.setAttribute('aria-expanded', open ? 'false' : 'true');
+            panel.hidden = open;
+        });
+
+        item.appendChild(row);
+        item.appendChild(panel);
+        return item;
+    }
+
+    function renderState(heading, detail, glyph) {
+        var box = el('div', 'state');
+        if (glyph) { box.appendChild(el('div', 'settled', glyph)); }
+        box.appendChild(el('h2', null, heading));
+        box.appendChild(el('p', null, detail));
+        contentEl.appendChild(box);
+    }
+
+    function render(data) {
+        titleEl.textContent = data.title || 'Settle up';
+
+        var bits = [];
+        if (data.total !== null) { bits.push(money(data.total) + ' total'); }
+        if (data.people.length) {
+            bits.push(data.people.length + (data.people.length === 1 ? ' person owes' : ' people owe'));
+        }
+        subtitleEl.textContent = bits.join(' · ');
+
+        if (!data.people.length) {
+            renderState('All settled up', 'Nobody owes anything on this one.', '✓');
+            return;
+        }
+
+        if (!data.payers.length) {
+            renderState('This link is incomplete',
+                'It doesn’t say who to pay. Ask whoever sent it to share it again from Divvy.');
+            return;
+        }
+
+        contentEl.appendChild(el('p', 'section-label',
+            data.people.length === 1 ? 'Amount owed' : 'Who owes what'));
+
+        var list = el('ul', 'people');
+        var note = noteText(data);
+        /* A link sent one-to-one has nothing to choose between, so skip the tap. */
+        var autoExpand = data.people.length === 1;
+        data.people.forEach(function (person) {
+            list.appendChild(renderPerson(person, data, note, autoExpand));
+        });
+        contentEl.appendChild(list);
+    }
+
+    // ---------- boot ----------
+
+    function boot() {
+        contentEl.textContent = '';
+
+        var payload;
+        try {
+            payload = decode(window.location.hash);
+        } catch (error) {
+            renderState('This link is damaged',
+                'It couldn’t be read. Ask whoever sent it to share it again from Divvy.');
+            return;
+        }
+
+        if (payload === null) {
+            titleEl.textContent = 'Settle up';
+            renderState('Nothing to show yet',
+                'This page needs a share link from the Divvy app to know who owes what.');
+            return;
+        }
+
+        try {
+            render(normalize(payload));
+        } catch (error) {
+            if (error && error.code === 'version') {
+                renderState('This link needs a newer version',
+                    'It was created by a newer version of Divvy than this page understands.');
+            } else {
+                renderState('This link is damaged',
+                    'It couldn’t be read. Ask whoever sent it to share it again from Divvy.');
+            }
+        }
+    }
+
+    boot();
+    /* Share sheets and in-app browsers sometimes hand over a URL whose fragment lands a beat
+       later, and a person can paste a second link into the same tab — both arrive as hashchange
+       rather than a fresh load. */
+    window.addEventListener('hashchange', boot);
+})();
+</script>
+
+</body>
+</html>
