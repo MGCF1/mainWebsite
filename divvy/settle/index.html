@@ -20,110 +20,151 @@
 <link rel="icon" href="/images/Icons/Divvy_Icon.png">
 
 <style>
-/* Self-contained on purpose: css/styles.css carries the portfolio nav/hero/skills layout and
-   css/project.css is scaffolding for the projects/*.html detail pages — neither applies to a
-   standalone utility page. The colour tokens and font stack below are copied from
-   css/styles.css so it still reads as part of mgcf1.com. */
+/* Design tokens lifted from the Divvy app itself so this page reads as the same product:
+   mainBackground / cellBackground from Assets.xcassets, the 25pt corner radius that dominates
+   the app's cards (21 uses in Main UI), SF Pro Rounded (`.fontDesign(.rounded)`, 27 uses), and
+   monospaced bold for money the way ShareView renders balances. */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-    --background: #ffffff;
+    /* Assets.xcassets/mainBackground + cellBackground */
+    --background: #F1F2F6;
+    --card: #FFFFFF;
     --text-primary: #1d1d1f;
     --text-secondary: #86868b;
-    --card-background: #f5f5f7;
-    --divider: rgba(0, 0, 0, 0.08);
-    --row-active: rgba(0, 0, 0, 0.04);
-    /* Divvy's own identity, matching the gradient in data/projects.js */
-    --divvy-from: #43e97b;
-    --divvy-to: #38f9d7;
-    --divvy-ink: #0a6b3d;
+    --divider: rgba(0, 0, 0, 0.07);
+    --row-active: rgba(0, 0, 0, 0.035);
+    --card-shadow: 0 6px 24px rgba(0, 0, 0, 0.10);
+
+    /* Divvy's named colors */
+    --divvy-red: #E08D79;
+    --divvy-gold: #E3B86E;
+    --divvy-green: #0A5B48;
+
+    /* The default trio from [Color].gradientColors — used when a group has no profile colors.
+       Blue / green / red, exactly as the app falls back to. */
+    --mesh-blue: #6C95B7;
+    --mesh-green: #B9EED2;
+    --mesh-red: #EF8470;
+    --mesh-alpha: 0.85;
+
     --venmo: #008CFF;
     --cashapp: #00C244;
     --applecash: #1d1d1f;
+
+    --radius-card: 25px;
+    --font-rounded: ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --background: #002400;
+        --background: #000000;
+        --card: #1C1C1E;
         --text-primary: #f5f5f7;
-        --text-secondary: #86868b;
-        --card-background: #143214;
-        --divider: rgba(255, 255, 255, 0.12);
-        --row-active: rgba(255, 255, 255, 0.06);
-        --divvy-ink: #43e97b;
+        --text-secondary: #8e8e93;
+        --divider: rgba(255, 255, 255, 0.10);
+        --row-active: rgba(255, 255, 255, 0.05);
+        --card-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+        --divvy-gold: #F0C884;
+        --divvy-green: #6FB58E;
         --applecash: #f5f5f7;
+        /* The mesh sits over pure black in dark mode, so it's pulled back to a glow. */
+        --mesh-alpha: 0.5;
     }
 }
 
 html { background-color: var(--background); -webkit-text-size-adjust: 100%; }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: var(--font-rounded);
     background-color: var(--background);
     color: var(--text-primary);
-    line-height: 1.5;
+    line-height: 1.45;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    padding: 32px 20px calc(40px + env(safe-area-inset-bottom, 0px));
+    padding: 30px 18px calc(40px + env(safe-area-inset-bottom, 0px));
     display: flex;
     justify-content: center;
+    min-height: 100svh;
 }
 
-.sheet { width: 100%; max-width: 520px; }
+/* A CSS approximation of the app's MetalMeshGradientBalanced header: a ~320px band of soft
+   colour blobs at the top, fading into mainBackground. Not the real mesh shader — three blurred
+   radial gradients that drift slowly, which reads the same at a glance. */
+.mesh {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 320px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: var(--mesh-alpha);
+    background:
+        radial-gradient(58% 68% at 18% 18%, var(--mesh-blue) 0%, transparent 62%),
+        radial-gradient(62% 70% at 84% 12%, var(--mesh-red) 0%, transparent 62%),
+        radial-gradient(72% 78% at 48% 72%, var(--mesh-green) 0%, transparent 68%);
+    filter: blur(34px);
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
+    animation: drift 18s ease-in-out infinite alternate;
+}
+
+@keyframes drift {
+    from { transform: translate3d(-3%, -2%, 0) scale(1.05); }
+    to   { transform: translate3d(3%, 2%, 0) scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mesh { animation: none; }
+}
+
+.sheet { width: 100%; max-width: 520px; position: relative; z-index: 1; }
 
 /* ---------- Header ---------- */
 
 .brand {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 28px;
+    gap: 9px;
+    margin-bottom: 26px;
 }
 
-.brand img {
-    width: 30px;
-    height: 30px;
-    border-radius: 22%;
-    display: block;
-}
+.brand img { width: 30px; height: 30px; border-radius: 22%; display: block; }
 
-.brand span {
-    font-size: 17px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-}
+.brand span { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
 
-.headline { margin-bottom: 24px; }
+.headline { margin-bottom: 22px; }
 
 .headline h1 {
-    font-size: 30px;
-    line-height: 1.15;
-    font-weight: 700;
+    font-size: 32px;
+    line-height: 1.12;
+    font-weight: 800;
     letter-spacing: -0.02em;
     overflow-wrap: anywhere;
 }
 
 .headline p {
-    margin-top: 6px;
+    margin-top: 5px;
     color: var(--text-secondary);
     font-size: 15px;
+    font-weight: 500;
 }
 
 /* ---------- People list ---------- */
 
 .section-label {
     font-size: 13px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
+    font-weight: 700;
+    letter-spacing: 0.02em;
     color: var(--text-secondary);
-    margin-bottom: 10px;
+    margin: 0 0 9px 4px;
 }
 
 .people {
     list-style: none;
-    background: var(--card-background);
-    border-radius: 16px;
+    background: var(--card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--card-shadow);
     overflow: hidden;
 }
 
@@ -133,8 +174,8 @@ body {
     width: 100%;
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 16px 18px;
+    gap: 13px;
+    padding: 14px 18px;
     background: none;
     border: 0;
     font: inherit;
@@ -145,89 +186,103 @@ body {
 }
 
 .person-row:hover { background: var(--row-active); }
-.person-row:focus-visible { outline: 2px solid var(--divvy-ink); outline-offset: -2px; }
+.person-row:focus-visible { outline: 2px solid var(--mesh-blue); outline-offset: -3px; }
+
+/* The app's ProfileBubble: a circle filled topLeading->bottomTrailing with two of the palette
+   colours, initials in 90% white at heavy weight. */
+.bubble {
+    width: 42px; height: 42px;
+    flex: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.person-text { flex: 1; min-width: 0; }
 
 .person-name {
-    flex: 1;
-    font-size: 17px;
-    font-weight: 500;
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
     overflow-wrap: anywhere;
 }
 
+/* ShareView renders balances as monospaced bold with the $ alongside — same here. */
 .person-amount {
-    font-size: 17px;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--divvy-ink);
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-top: 1px;
 }
 
 .chev {
-    width: 13px;
-    height: 13px;
+    width: 12px; height: 12px;
     flex: none;
-    border-right: 2px solid var(--text-secondary);
-    border-bottom: 2px solid var(--text-secondary);
+    border-right: 2.5px solid var(--text-secondary);
+    border-bottom: 2.5px solid var(--text-secondary);
+    border-radius: 0 0 2px 0;
     transform: rotate(45deg) translate(-2px, -2px);
     transition: transform 0.2s ease;
 }
 
 .person-row[aria-expanded="true"] .chev { transform: rotate(225deg) translate(-3px, -3px); }
 
-.person-pay { padding: 2px 18px 18px; }
+.person-pay { padding: 2px 18px 18px 73px; }
 .person-pay[hidden] { display: none; }
 
-.payer + .payer { margin-top: 18px; }
+.payer + .payer { margin-top: 16px; }
 
 .payer-label {
-    font-size: 14px;
+    font-size: 13px;
+    font-weight: 600;
     color: var(--text-secondary);
-    margin-bottom: 10px;
+    margin-bottom: 9px;
 }
 
 .pay-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .pay-btn {
     flex: 1 1 auto;
-    min-width: 130px;
+    min-width: 110px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 7px;
     padding: 12px 16px;
-    border-radius: 12px;
+    border-radius: 18px;
     font-size: 15px;
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: none;
     color: #ffffff;
     background: var(--text-secondary);
-    transition: opacity 0.15s ease;
+    transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-.pay-btn:active { opacity: 0.75; }
-.pay-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.85); flex: none; }
+.pay-btn:active { opacity: 0.8; transform: scale(0.98); }
+.pay-btn .dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,0.85); flex: none; }
 
 .pay-btn.venmo { background: var(--venmo); }
 .pay-btn.cashapp { background: var(--cashapp); }
-.pay-btn.applecash { background: var(--applecash); color: var(--background); }
-.pay-btn.applecash .dot { background: var(--background); opacity: 0.8; }
+.pay-btn.applecash { background: var(--applecash); color: var(--card); }
+.pay-btn.applecash .dot { background: var(--card); opacity: 0.8; }
 
-.pay-note {
-    margin-top: 10px;
-    font-size: 13px;
-    color: var(--text-secondary);
-}
+.pay-note { margin-top: 9px; font-size: 13px; color: var(--text-secondary); }
 
-.handle-only {
-    font-size: 15px;
-    color: var(--text-secondary);
-}
+.handle-only { font-size: 15px; color: var(--text-secondary); }
 
 /* ---------- Footer / states ---------- */
 
 .foot {
-    margin-top: 28px;
-    padding-top: 18px;
-    border-top: 1px solid var(--divider);
+    margin-top: 24px;
+    padding: 0 6px;
     font-size: 13px;
     color: var(--text-secondary);
 }
@@ -235,19 +290,22 @@ body {
 .foot a { color: inherit; }
 
 .state {
-    background: var(--card-background);
-    border-radius: 16px;
-    padding: 28px 22px;
+    background: var(--card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--card-shadow);
+    padding: 30px 24px;
     text-align: center;
 }
 
-.state h2 { font-size: 19px; font-weight: 600; margin-bottom: 8px; }
+.state h2 { font-size: 19px; font-weight: 700; margin-bottom: 7px; }
 .state p { font-size: 15px; color: var(--text-secondary); }
 
-.settled { font-size: 34px; margin-bottom: 10px; }
+.settled { font-size: 34px; margin-bottom: 8px; }
 </style>
 </head>
 <body>
+
+<div class="mesh" aria-hidden="true"></div>
 
 <main class="sheet">
     <div class="brand">
@@ -309,6 +367,27 @@ body {
 
     function dollarsForURL(cents) {
         return (cents / 100).toFixed(2);
+    }
+
+    /* The app's default palette for a group with no profile colours — [Color].gradientColors
+       falls back to exactly these three. Per-profile pastels aren't in the payload, so each
+       person gets a stable pair from this trio instead, picked by position. */
+    var MESH = ['var(--mesh-blue)', 'var(--mesh-green)', 'var(--mesh-red)'];
+
+    /* ProfileBubble fills topLeading -> bottomTrailing with [secondary, primary]; 135deg is the
+       CSS equivalent of that corner-to-corner direction. */
+    function bubbleGradient(index) {
+        var primary = MESH[index % MESH.length];
+        var secondary = MESH[(index + 1) % MESH.length];
+        return 'linear-gradient(135deg, ' + secondary + ' 0%, ' + primary + ' 100%)';
+    }
+
+    function initials(name) {
+        var parts = name.trim().split(/\s+/).slice(0, 2);
+        var letters = parts.map(function (part) {
+            return Array.from(part)[0] || '';
+        }).join('');
+        return letters.toUpperCase() || '?';
     }
 
     /* Handles go straight into a URL path/query, so they're restricted to the characters Venmo
@@ -457,14 +536,24 @@ body {
 
     // ---------- render ----------
 
-    function renderPerson(person, data, note, autoExpand) {
+    function renderPerson(person, index, data, note, autoExpand) {
         var item = el('li', 'person');
 
         var row = el('button', 'person-row');
         row.type = 'button';
         row.setAttribute('aria-expanded', autoExpand ? 'true' : 'false');
-        row.appendChild(el('span', 'person-name', person.name));
-        row.appendChild(el('span', 'person-amount', money(person.owes)));
+
+        var bubble = el('span', 'bubble', initials(person.name));
+        bubble.style.backgroundImage = bubbleGradient(index);
+        row.appendChild(bubble);
+
+        /* ShareView stacks a caption-sized name over the balance rather than putting them on
+           one line — same shape here so the two screens read alike. */
+        var text = el('span', 'person-text');
+        text.appendChild(el('span', 'person-name', person.name));
+        text.appendChild(el('span', 'person-amount', money(person.owes)));
+        row.appendChild(text);
+
         row.appendChild(el('span', 'chev'));
 
         var panel = el('div', 'person-pay');
@@ -535,8 +624,8 @@ body {
         var note = noteText(data);
         /* A link sent one-to-one has nothing to choose between, so skip the tap. */
         var autoExpand = data.people.length === 1;
-        data.people.forEach(function (person) {
-            list.appendChild(renderPerson(person, data, note, autoExpand));
+        data.people.forEach(function (person, index) {
+            list.appendChild(renderPerson(person, index, data, note, autoExpand));
         });
         contentEl.appendChild(list);
     }
