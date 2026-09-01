@@ -402,10 +402,21 @@ body {
         return data.title ? data.title : 'Divvy split';
     }
 
+    /* Venmo's own web-to-app handoff re-serializes the query string as form-urlencoded on the
+       way to the venmo:// scheme, which turns every space into a literal "+" that the app then
+       shows inside the note field. It does that whether the space arrives as %20 or as +, so no
+       encoding of a plain space survives the trip. A non-breaking space is left alone by that
+       re-encoding and is visually identical in the note, so the note reads as written.
+       Verified against the live redirect chain: %20 and + both emerge as "+", while %C2%A0
+       comes through intact. */
+    function venmoNote(note) {
+        return note.replace(/ /g, '\u00A0');
+    }
+
     function venmoURL(payer, cents, note) {
         return 'https://venmo.com/' + encodeURIComponent(payer.venmo) +
             '?txn=pay&amount=' + dollarsForURL(cents) +
-            '&note=' + encodeURIComponent(note);
+            '&note=' + encodeURIComponent(venmoNote(note));
     }
 
     function cashAppURL(payer, cents) {
