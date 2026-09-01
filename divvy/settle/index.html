@@ -54,6 +54,9 @@
 
     --radius-card: 25px;
     --font-rounded: ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    /* The pay buttons stay on the standard system face — the rounded face fights the Venmo and
+       Cash App wordmarks, which aren't rounded. */
+    --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
@@ -258,8 +261,10 @@ body {
     gap: 7px;
     padding: 12px 16px;
     border-radius: 18px;
+    font-family: var(--font-system);
     font-size: 15px;
-    font-weight: 700;
+    font-weight: 600;
+    letter-spacing: -0.01em;
     text-decoration: none;
     color: #ffffff;
     background: var(--text-secondary);
