@@ -41,12 +41,19 @@
     --divvy-gold: #E3B86E;
     --divvy-green: #0A5B48;
 
-    /* The default trio from [Color].gradientColors — used when a group has no profile colors.
-       Blue / green / red, exactly as the app falls back to. */
+    /* The default trio from [Color].gradientColors — used when there's no real payer color to
+       work with. Blue / green / red, exactly as the app falls back to. */
     --mesh-blue: #6C95B7;
     --mesh-green: #B9EED2;
     --mesh-red: #EF8470;
     --mesh-alpha: 0.85;
+
+    /* What `.mesh` actually paints with — defaults to the fallback trio above, but `applyHeaderMesh()`
+       overrides these three (not --mesh-blue/green/red directly) with real payer colors when the
+       payload has any, so the bubble fallback trio and the header background stay independent. */
+    --header-mesh-1: var(--mesh-blue);
+    --header-mesh-2: var(--mesh-red);
+    --header-mesh-3: var(--mesh-green);
 
     --venmo: #008CFF;
     --cashapp: #00C244;
@@ -103,9 +110,9 @@ body {
     z-index: 0;
     opacity: var(--mesh-alpha);
     background:
-        radial-gradient(58% 68% at 18% 18%, var(--mesh-blue) 0%, transparent 62%),
-        radial-gradient(62% 70% at 84% 12%, var(--mesh-red) 0%, transparent 62%),
-        radial-gradient(72% 78% at 48% 72%, var(--mesh-green) 0%, transparent 68%);
+        radial-gradient(58% 68% at 18% 18%, var(--header-mesh-1) 0%, transparent 62%),
+        radial-gradient(62% 70% at 84% 12%, var(--header-mesh-2) 0%, transparent 62%),
+        radial-gradient(72% 78% at 48% 72%, var(--header-mesh-3) 0%, transparent 68%);
     filter: blur(34px);
     -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
     mask-image: linear-gradient(to bottom, #000 0%, #000 45%, transparent 100%);
@@ -194,7 +201,7 @@ body {
 /* The app's ProfileBubble: a circle filled topLeading->bottomTrailing with two of the palette
    colours, initials in 90% white at heavy weight. */
 .bubble {
-    width: 42px; height: 42px;
+    width: 44px; height: 44px;
     flex: none;
     border-radius: 50%;
     display: flex;
@@ -206,23 +213,25 @@ body {
     color: rgba(255, 255, 255, 0.9);
 }
 
+/* ShareView's balanceCard row: name (bold) stacked tight over a status caption, with the pair
+   noticeably shorter than the bubble beside them — that ratio is the whole point of this block,
+   so `line-height` is pulled in from `body`'s 1.45 (meant for prose, not a 2-line label stack)
+   rather than left to inherit it. */
 .person-text { flex: 1; min-width: 0; }
 
 .person-name {
     display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-secondary);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.15;
     overflow-wrap: anywhere;
 }
 
-/* ShareView renders balances as monospaced bold with the $ alongside — same here. */
-.person-amount {
+.person-status {
     display: block;
-    font-family: var(--font-mono);
-    font-size: 22px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-size: 13px;
+    line-height: 1.15;
+    color: var(--text-secondary);
     margin-top: 1px;
 }
 
@@ -232,14 +241,8 @@ body {
     border-right: 2.5px solid var(--text-secondary);
     border-bottom: 2.5px solid var(--text-secondary);
     border-radius: 0 0 2px 0;
-    transform: rotate(45deg) translate(-2px, -2px);
-    transition: transform 0.2s ease;
+    transform: rotate(-45deg) translate(-1px, 1px);
 }
-
-.person-row[aria-expanded="true"] .chev { transform: rotate(225deg) translate(-3px, -3px); }
-
-.person-pay { padding: 2px 18px 18px 73px; }
-.person-pay[hidden] { display: none; }
 
 .payer + .payer { margin-top: 16px; }
 
@@ -282,6 +285,124 @@ body {
 .pay-note { margin-top: 9px; font-size: 13px; color: var(--text-secondary); }
 
 .handle-only { font-size: 15px; color: var(--text-secondary); }
+
+/* ---------- Money ---------- */
+
+/* Ports CurrencyLabel's look: the app draws "$" at ambient (smaller) size, the dollar amount at
+   `.title`, and the cents as a same-digit-count string forced to shrink into a single character's
+   width via minimumScaleFactor, top-aligned — which reads as a small raised "cents" mark with no
+   decimal point. Font-size on each part is set in `em` so `.person-money`/`.detail-money` can
+   just change one font-size and have every part scale together. */
+/* Flex, not `vertical-align` — a baseline-aligned small "$" reads as sitting low against the much
+   taller dollar digits. `align-items: center` on the row plus a per-part `align-self` gives each
+   piece exactly the vertical position it needs: the sign centered on the dollars' full height, the
+   cents pinned to the top for the raised, no-decimal-point look. */
+.money {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+}
+
+.money-sign { font-size: 0.6em; margin-right: 1px; align-self: center; }
+.money-dollars { font-size: 1em; line-height: 1; }
+
+.money-cents {
+    font-size: 0.52em;
+    line-height: 1;
+    align-self: flex-start;
+    margin-left: 1px;
+    margin-top: 0.05em;
+}
+
+.person-money { flex: none; font-size: 22px; }
+
+/* ---------- Person detail (full screen) ---------- */
+
+.detail {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    background: var(--background);
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.detail.open { transform: translateX(0); }
+.detail[hidden] { display: none; }
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 14px;
+}
+
+.detail-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px; height: 34px;
+    flex: none;
+    border-radius: 50%;
+    background: var(--card);
+    box-shadow: var(--card-shadow);
+    border: 0;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.detail-back::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-left: 2.5px solid var(--text-primary);
+    border-bottom: 2.5px solid var(--text-primary);
+    transform: rotate(45deg) translate(1px, -1px);
+}
+
+.detail-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 24px calc(40px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+/* Wraps just the bubble/name/status trio, kept separate from the money/pay-buttons spacing
+   further down. Per ShareView's balanceCard: the bubble reads as clearly bigger than the
+   name+status pair beside it, and name sits right on top of status — so the bubble->name gap and
+   the name->status gap are deliberately different, not one uniform value. */
+.detail-identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.detail-bubble {
+    width: 88px; height: 88px;
+    flex: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.9);
+    box-shadow: var(--card-shadow);
+    margin-bottom: 10px;
+}
+
+.detail-name { font-size: 24px; font-weight: 800; line-height: 1.15; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.detail-status { font-size: 15px; line-height: 1.15; color: var(--text-secondary); margin-top: 2px; }
+.detail-money { font-size: 46px; margin: 18px 0 28px; }
+
+.detail-pay { width: 100%; max-width: 380px; text-align: left; }
 
 /* ---------- Footer / states ---------- */
 
@@ -331,6 +452,14 @@ body {
     </p>
 </main>
 
+<!-- Populated per-person by openDetail() in the script below; the header/back button are the
+     only static part, so they're written out once here rather than rebuilt every time. -->
+<div class="detail" id="detail" hidden>
+    <div class="detail-header">
+        <button type="button" class="detail-back" id="detailBack" aria-label="Back"></button>
+    </div>
+</div>
+
 <script>
 (function () {
     'use strict';
@@ -348,6 +477,7 @@ body {
     var titleEl = document.getElementById('title');
     var subtitleEl = document.getElementById('subtitle');
     var contentEl = document.getElementById('content');
+    var detailEl = document.getElementById('detail');
 
     // ---------- helpers ----------
 
@@ -370,13 +500,26 @@ body {
         });
     }
 
+    /* DOM version of CurrencyLabel's look (see the `.money` rule): "$" and the cents both render
+       smaller than the dollar amount, and the cents sit raised with no decimal point. All amounts
+       on this page are non-negative (people[].o is always positive), so there's no sign to handle. */
+    function moneyEl(cents, extraClass) {
+        var dollars = Math.floor(cents / 100).toLocaleString('en-US');
+        var centsStr = String(cents % 100).padStart(2, '0');
+        var wrap = el('span', extraClass ? 'money ' + extraClass : 'money');
+        wrap.appendChild(el('span', 'money-sign', '$'));
+        wrap.appendChild(el('span', 'money-dollars', dollars));
+        wrap.appendChild(el('span', 'money-cents', centsStr));
+        return wrap;
+    }
+
     function dollarsForURL(cents) {
         return (cents / 100).toFixed(2);
     }
 
     /* The app's default palette for a group with no profile colours — [Color].gradientColors
-       falls back to exactly these three. Per-profile pastels aren't in the payload, so each
-       person gets a stable pair from this trio instead, picked by position. */
+       falls back to exactly these three. Positional fallback for people whose real color didn't
+       make it through (an old link from before `c` existed, or a hand-edited/malformed value). */
     var MESH = ['var(--mesh-blue)', 'var(--mesh-green)', 'var(--mesh-red)'];
 
     /* ProfileBubble fills topLeading -> bottomTrailing with [secondary, primary]; 135deg is the
@@ -385,6 +528,46 @@ body {
         var primary = MESH[index % MESH.length];
         var secondary = MESH[(index + 1) % MESH.length];
         return 'linear-gradient(135deg, ' + secondary + ' 0%, ' + primary + ' 100%)';
+    }
+
+    /* Lightens (positive) or darkens (negative) a #RRGGBB by `percent`. */
+    function shadeColor(hex, percent) {
+        var num = parseInt(hex.slice(1), 16);
+        var amt = Math.round(2.55 * percent);
+        var r = Math.min(255, Math.max(0, (num >> 16) + amt));
+        var g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + amt));
+        var b = Math.min(255, Math.max(0, (num & 0xff) + amt));
+        return '#' + (0x1000000 + r * 0x10000 + g * 0x100 + b).toString(16).slice(1);
+    }
+
+    /* The real per-profile bubble: a lighter and darker shade of the one color the payload
+       carries, standing in for the app's independently-random secondary color — same
+       topLeading->bottomTrailing direction as `bubbleGradient`. Falls back to the positional
+       palette when there's no real color. */
+    function personBubbleGradient(person, index) {
+        if (!person.color) { return bubbleGradient(index); }
+        var lighter = shadeColor(person.color, 22);
+        var darker = shadeColor(person.color, -12);
+        return 'linear-gradient(135deg, ' + lighter + ' 0%, ' + darker + ' 100%)';
+    }
+
+    /* Overrides --header-mesh-1/2/3 (see :root) with real payer colors, cycling through what's
+       available so 1-2 payers still light up all three blobs instead of leaving some on the
+       default fallback trio. Explicitly clears the overrides when there's nothing to use —
+       without that, a second link pasted into the same tab (hashchange) that has no payer colors
+       would keep showing the previous link's. */
+    function applyHeaderMesh(payers) {
+        var root = document.documentElement.style;
+        var colors = payers.map(function (p) { return p.color; }).filter(Boolean);
+        if (!colors.length) {
+            root.removeProperty('--header-mesh-1');
+            root.removeProperty('--header-mesh-2');
+            root.removeProperty('--header-mesh-3');
+            return;
+        }
+        root.setProperty('--header-mesh-1', colors[0]);
+        root.setProperty('--header-mesh-2', colors[1] || colors[0]);
+        root.setProperty('--header-mesh-3', colors[2] || colors[1] || colors[0]);
     }
 
     function initials(name) {
@@ -408,6 +591,14 @@ body {
         if (typeof value !== 'string') { return null; }
         var phone = value.replace(/[^\d+]/g, '');
         return /^\+?\d{7,15}$/.test(phone) ? phone : null;
+    }
+
+    /* Strict #RRGGBB — this goes straight into a CSS gradient, so anything looser than an exact
+       6-digit hex is treated as absent (falls back to the positional MESH palette) rather than
+       passed through. */
+    function cleanColor(value) {
+        if (typeof value !== 'string') { return null; }
+        return /^#[0-9A-Fa-f]{6}$/.test(value) ? value : null;
     }
 
     function cleanName(value, fallback) {
@@ -459,6 +650,7 @@ body {
                     cashApp: cleanHandle(payer.ca),
                     applePay: payer.ap === true,
                     phone: cleanPhone(payer.ph),
+                    color: cleanColor(payer.c),
                     key: index
                 };
             });
@@ -469,7 +661,7 @@ body {
                 return person && typeof person === 'object' && isCents(person.o);
             })
             .map(function (person) {
-                return { name: cleanName(person.n, 'Someone'), owes: person.o };
+                return { name: cleanName(person.n, 'Someone'), owes: person.o, color: cleanColor(person.c) };
             });
 
         return {
@@ -539,30 +731,11 @@ body {
         return added ? wrap : null;
     }
 
-    // ---------- render ----------
-
-    function renderPerson(person, index, data, note, autoExpand) {
-        var item = el('li', 'person');
-
-        var row = el('button', 'person-row');
-        row.type = 'button';
-        row.setAttribute('aria-expanded', autoExpand ? 'true' : 'false');
-
-        var bubble = el('span', 'bubble', initials(person.name));
-        bubble.style.backgroundImage = bubbleGradient(index);
-        row.appendChild(bubble);
-
-        /* ShareView stacks a caption-sized name over the balance rather than putting them on
-           one line — same shape here so the two screens read alike. */
-        var text = el('span', 'person-text');
-        text.appendChild(el('span', 'person-name', person.name));
-        text.appendChild(el('span', 'person-amount', money(person.owes)));
-        row.appendChild(text);
-
-        row.appendChild(el('span', 'chev'));
-
-        var panel = el('div', 'person-pay');
-        panel.hidden = !autoExpand;
+    /* Builds the payer sections shared by the detail view (and, before it existed, the inline
+       panel this replaced) — one per payer, either their pay buttons or a "no payment method"
+       note, plus a closing note when there's more than one payer to choose from. */
+    function buildPaySections(person, data, note) {
+        var frag = document.createDocumentFragment();
 
         data.payers.forEach(function (payer) {
             var group = el('div', 'payer');
@@ -574,22 +747,84 @@ body {
                 group.appendChild(el('p', 'handle-only',
                     payer.name + ' hasn’t added a payment method — ask them how they’d like to be paid.'));
             }
-            panel.appendChild(group);
+            frag.appendChild(group);
         });
 
         if (data.payers.length > 1) {
-            panel.appendChild(el('p', 'pay-note',
+            frag.appendChild(el('p', 'pay-note',
                 'Pay whichever is easiest — send the whole ' + money(person.owes) + ' to one of them, then tell the others.'));
         }
 
+        return frag;
+    }
+
+    // ---------- person detail (full screen) ----------
+
+    function openDetail(person, index, data, note) {
+        var stale = detailEl.querySelector('.detail-body');
+        if (stale) { stale.remove(); }
+
+        var body = el('div', 'detail-body');
+
+        var identity = el('div', 'detail-identity');
+        var bubble = el('div', 'detail-bubble', initials(person.name));
+        bubble.style.backgroundImage = personBubbleGradient(person, index);
+        identity.appendChild(bubble);
+        identity.appendChild(el('div', 'detail-name', person.name));
+        identity.appendChild(el('div', 'detail-status', 'owes'));
+        body.appendChild(identity);
+
+        body.appendChild(moneyEl(person.owes, 'detail-money'));
+
+        var pay = el('div', 'detail-pay');
+        pay.appendChild(buildPaySections(person, data, note));
+        body.appendChild(pay);
+
+        detailEl.appendChild(body);
+        detailEl.hidden = false;
+        /* Forces a layout flush between un-hiding (still at the off-screen transform) and adding
+           `.open` — without it the browser can collapse both changes into one frame and skip the
+           slide-in transition entirely. */
+        void detailEl.offsetWidth;
+        detailEl.classList.add('open');
+    }
+
+    function closeDetail() {
+        detailEl.classList.remove('open');
+        window.setTimeout(function () {
+            if (!detailEl.classList.contains('open')) { detailEl.hidden = true; }
+        }, 320);
+    }
+
+    document.getElementById('detailBack').addEventListener('click', closeDetail);
+
+    // ---------- render ----------
+
+    function renderPerson(person, index, data, note) {
+        var item = el('li', 'person');
+
+        var row = el('button', 'person-row');
+        row.type = 'button';
+
+        var bubble = el('span', 'bubble', initials(person.name));
+        bubble.style.backgroundImage = personBubbleGradient(person, index);
+        row.appendChild(bubble);
+
+        /* ShareView stacks a bold name over a caption-sized "owes"/"is owed" line — same shape
+           here, minus the "is owed" case, since everyone on this page owes the payer. */
+        var text = el('span', 'person-text');
+        text.appendChild(el('span', 'person-name', person.name));
+        text.appendChild(el('span', 'person-status', 'owes'));
+        row.appendChild(text);
+
+        row.appendChild(moneyEl(person.owes, 'person-money'));
+        row.appendChild(el('span', 'chev'));
+
         row.addEventListener('click', function () {
-            var open = row.getAttribute('aria-expanded') === 'true';
-            row.setAttribute('aria-expanded', open ? 'false' : 'true');
-            panel.hidden = open;
+            openDetail(person, index, data, note);
         });
 
         item.appendChild(row);
-        item.appendChild(panel);
         return item;
     }
 
@@ -603,6 +838,7 @@ body {
 
     function render(data) {
         titleEl.textContent = data.title || 'Settle up';
+        applyHeaderMesh(data.payers);
 
         var bits = [];
         if (data.total !== null) { bits.push(money(data.total) + ' total'); }
@@ -627,18 +863,26 @@ body {
 
         var list = el('ul', 'people');
         var note = noteText(data);
-        /* A link sent one-to-one has nothing to choose between, so skip the tap. */
-        var autoExpand = data.people.length === 1;
         data.people.forEach(function (person, index) {
-            list.appendChild(renderPerson(person, index, data, note, autoExpand));
+            list.appendChild(renderPerson(person, index, data, note));
         });
         contentEl.appendChild(list);
+
+        /* A link sent one-to-one has nothing to choose between, so skip straight to the detail
+           view instead of making them tap the one row. */
+        if (data.people.length === 1) {
+            openDetail(data.people[0], 0, data, note);
+        }
     }
 
     // ---------- boot ----------
 
     function boot() {
         contentEl.textContent = '';
+        /* A second link can land in the same tab via hashchange — don't leave the previous
+           link's detail view showing over the newly-decoded content. */
+        detailEl.hidden = true;
+        detailEl.classList.remove('open');
 
         var payload;
         try {
