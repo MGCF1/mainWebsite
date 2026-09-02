@@ -46,7 +46,8 @@
       "Bash(cp \"/Users/milocassarino/Desktop/Gemini_Generated_Image_wz6bjawz6bjawz6b.png\" \"/Users/milocassarino/Developer/mainWebsite/images/Skills/EmptyStateExploded.png\" && ls -la \"/Users/milocassarino/Developer/mainWebsite/images/Skills/EmptyStateExploded.png\")",
       "Bash(git restore *)",
       "Bash(git merge *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "mcp__visualize__show_widget"
     ]
   }
 }
