@@ -551,14 +551,21 @@ body {
         return 'linear-gradient(135deg, ' + lighter + ' 0%, ' + darker + ' 100%)';
     }
 
-    /* Overrides --header-mesh-1/2/3 (see :root) with real payer colors, cycling through what's
-       available so 1-2 payers still light up all three blobs instead of leaving some on the
-       default fallback trio. Explicitly clears the overrides when there's nothing to use —
-       without that, a second link pasted into the same tab (hashchange) that has no payer colors
-       would keep showing the previous link's. */
-    function applyHeaderMesh(payers) {
+    /* Overrides --header-mesh-1/2/3 (see :root) with real profile colors, cycling through what's
+       available so 1-2 people still light up all three blobs instead of leaving some on the
+       default fallback trio. Draws from payers AND people (everyone on the page, payer or debtor)
+       so the header reads as "this group's gradient" the way the app's own MetalMeshGradient does
+       — [Color].gradientColors feeds it every group member's primaryColor, not just whoever
+       fronted the money, and this page was only ever passing payer colors, so a group with one
+       payer and four debtors always rendered a flat one/two-color header instead of the full set.
+       Explicitly clears the overrides when there's nothing to use — without that, a second link
+       pasted into the same tab (hashchange) that has no profile colors would keep showing the
+       previous link's. */
+    function applyHeaderMesh(payers, people) {
         var root = document.documentElement.style;
-        var colors = payers.map(function (p) { return p.color; }).filter(Boolean);
+        var colors = payers.map(function (p) { return p.color; })
+            .concat(people.map(function (p) { return p.color; }))
+            .filter(Boolean);
         if (!colors.length) {
             root.removeProperty('--header-mesh-1');
             root.removeProperty('--header-mesh-2');
@@ -661,7 +668,21 @@ body {
                 return person && typeof person === 'object' && isCents(person.o);
             })
             .map(function (person) {
-                return { name: cleanName(person.n, 'Someone'), owes: person.o, color: cleanColor(person.c) };
+                /* Per-creditor breakdown — who this person actually owes, and how much of their
+                   total goes to each. Absent (empty array) on a link made before this field
+                   existed, or if every entry in it turns out malformed; either way that's treated
+                   as "no breakdown available", same as a missing `color`, not as an error. */
+                var to = (Array.isArray(person.to) ? person.to : [])
+                    .slice(0, MAX_PAYERS)
+                    .map(function (debt) {
+                        debt = debt && typeof debt === 'object' ? debt : {};
+                        return { payerIndex: debt.p, cents: debt.o };
+                    })
+                    .filter(function (debt) {
+                        return typeof debt.payerIndex === 'number' && Number.isInteger(debt.payerIndex) &&
+                            debt.payerIndex >= 0 && debt.payerIndex < payers.length && isCents(debt.cents);
+                    });
+                return { name: cleanName(person.n, 'Someone'), owes: person.o, color: cleanColor(person.c), to: to };
             });
 
         return {
@@ -731,23 +752,45 @@ body {
         return added ? wrap : null;
     }
 
+    /* One payer section: their pay buttons for `cents`, or a "no payment method" note. `label`
+       is the payer-label text — plain "Pay {name}" for the single-creditor case, "Pay {name}
+       {amount}" once there's a real per-creditor breakdown to be specific about. */
+    function paySection(payer, cents, note, label) {
+        var group = el('div', 'payer');
+        group.appendChild(el('p', 'payer-label', label));
+        var buttons = payButtons(payer, cents, note);
+        if (buttons) {
+            group.appendChild(buttons);
+        } else {
+            group.appendChild(el('p', 'handle-only',
+                payer.name + ' hasn’t added a payment method — ask them how they’d like to be paid.'));
+        }
+        return group;
+    }
+
     /* Builds the payer sections shared by the detail view (and, before it existed, the inline
-       panel this replaced) — one per payer, either their pay buttons or a "no payment method"
-       note, plus a closing note when there's more than one payer to choose from. */
+       panel this replaced). When the link carries a real per-creditor breakdown (`person.to` —
+       every link made since that field shipped), each section pays the exact amount that person
+       owes that specific payer. Older links have no breakdown to work from, so they fall back to
+       offering the person's full total to every payer in scope and leaving it to them to pick
+       one and square things up with the rest themselves. */
     function buildPaySections(person, data, note) {
         var frag = document.createDocumentFragment();
 
+        if (person.to.length) {
+            person.to.forEach(function (debt) {
+                var payer = data.payers[debt.payerIndex];
+                if (!payer) { return; }
+                var label = person.to.length > 1
+                    ? 'Pay ' + payer.name + ' ' + money(debt.cents)
+                    : 'Pay ' + payer.name;
+                frag.appendChild(paySection(payer, debt.cents, note, label));
+            });
+            return frag;
+        }
+
         data.payers.forEach(function (payer) {
-            var group = el('div', 'payer');
-            group.appendChild(el('p', 'payer-label', 'Pay ' + payer.name));
-            var buttons = payButtons(payer, person.owes, note);
-            if (buttons) {
-                group.appendChild(buttons);
-            } else {
-                group.appendChild(el('p', 'handle-only',
-                    payer.name + ' hasn’t added a payment method — ask them how they’d like to be paid.'));
-            }
-            frag.appendChild(group);
+            frag.appendChild(paySection(payer, person.owes, note, 'Pay ' + payer.name));
         });
 
         if (data.payers.length > 1) {
@@ -838,7 +881,7 @@ body {
 
     function render(data) {
         titleEl.textContent = data.title || 'Settle up';
-        applyHeaderMesh(data.payers);
+        applyHeaderMesh(data.payers, data.people);
 
         var bits = [];
         if (data.total !== null) { bits.push(money(data.total) + ' total'); }
