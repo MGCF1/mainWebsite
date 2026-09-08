@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Settle up · Divvy</title>
 
-<!-- These links are private by nature (see the fragment note in the script below) and there is
-     nothing at this URL without one, so keep it out of search results entirely. -->
+<!-- These links carry everything they show either in the `d` query parameter or, for older
+     links, the URL fragment — a query parameter reaches this server's access logs and any
+     outgoing Referer header, a fragment never does (see the payload note in the script below).
+     Either way there's nothing at this URL without one, so keep it out of search results
+     entirely. -->
 <meta name="robots" content="noindex, nofollow">
 
 <!-- Link previews are generated from static HTML by iMessage/SMS/Slack — they never execute the
@@ -620,11 +623,16 @@ body {
 
     // ---------- decode ----------
 
-    /* Base64URL → JSON. The payload lives in the fragment specifically because a fragment is
-       never transmitted in the HTTP request: the handles, phone numbers and amounts below never
-       reach this server or its access logs, and never would even if the hosting changed. */
-    function decode(hash) {
-        var raw = hash.replace(/^#/, '').trim();
+    /* Base64URL → JSON. Newer links carry the payload in the `d` query parameter; older links
+       carry it in the URL fragment instead — see `currentPayloadString` below for which one a
+       given page load actually reads. The two aren't equivalent: a fragment is never transmitted
+       in the HTTP request, so a fragment-based link's handles, phone numbers, and amounts never
+       reach this server or its access logs, and never would even if the hosting changed. A query
+       parameter doesn't have that property — it's part of the request itself, and can land in
+       logs or an outgoing Referer header. Both are still read here so links already out in the
+       wild keep working. */
+    function decode(raw) {
+        raw = raw.trim();
         if (!raw) { return null; }
         var padded = raw.replace(/-/g, '+').replace(/_/g, '/');
         padded += '='.repeat((4 - padded.length % 4) % 4);
@@ -635,6 +643,15 @@ body {
         for (var i = 0; i < binary.length; i++) { bytes[i] = binary.charCodeAt(i); }
         var json = new TextDecoder('utf-8').decode(bytes);
         return JSON.parse(json);
+    }
+
+    /* The `d` query parameter is what this app's own links carry now; the URL fragment is where
+       every link made before that change put it (and where some other client could still put
+       it), so it's only used when there's no `d` parameter at all. */
+    function currentPayloadString() {
+        var fromQuery = new URLSearchParams(window.location.search).get('d');
+        if (fromQuery !== null) { return fromQuery; }
+        return window.location.hash.replace(/^#/, '');
     }
 
     function normalize(payload) {
@@ -929,7 +946,7 @@ body {
 
         var payload;
         try {
-            payload = decode(window.location.hash);
+            payload = decode(currentPayloadString());
         } catch (error) {
             renderState('This link is damaged',
                 'It couldn’t be read. Ask whoever sent it to share it again from Divvy.');
