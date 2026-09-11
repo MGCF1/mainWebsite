@@ -173,15 +173,15 @@ body {
     margin: 0 0 9px 4px;
 }
 
+/* Each person is now its own card, not a shared list with dividers — matches how
+   SettleTransactionsList lays out the share image: one rounded card per payer (`sectionBackground()`),
+   `cardSpacing` (8pt) apart, rather than one big grouped list. */
 .people {
     list-style: none;
-    background: var(--card);
-    border-radius: var(--radius-card);
-    box-shadow: var(--card-shadow);
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
-
-.person + .person { border-top: 1px solid var(--divider); }
 
 .person-row {
     width: 100%;
@@ -189,7 +189,9 @@ body {
     align-items: center;
     gap: 13px;
     padding: 14px 18px;
-    background: none;
+    background: var(--card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--card-shadow);
     border: 0;
     font: inherit;
     color: inherit;
@@ -198,7 +200,7 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
-.person-row:hover { background: var(--row-active); }
+.person-row:hover { filter: brightness(0.97); }
 .person-row:focus-visible { outline: 2px solid var(--mesh-blue); outline-offset: -3px; }
 
 /* The app's ProfileBubble: a circle filled topLeading->bottomTrailing with two of the palette
@@ -246,6 +248,74 @@ body {
     border-radius: 0 0 2px 0;
     transform: rotate(-45deg) translate(-1px, 1px);
 }
+
+/* ---------- Settle rows (matches SettleTransactionsList's row/card) ---------- */
+
+/* Bubble+name pair at 35px — the app's `personLine`, smaller than the 44px top-level `.bubble`
+   since this shows up twice per row here (once for the payer, once for each receiver) rather
+   than once. */
+.mini-person {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.mini-bubble {
+    width: 35px; height: 35px;
+    flex: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.mini-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* `arrow.turn.down.right` — the hooked arrow SettleTransactionsList draws between a payer and
+   each receiver. Inline SVG rather than an icon font, so it doesn't depend on one being loaded. */
+.turn-arrow {
+    width: 15px; height: 15px;
+    flex: none;
+    color: var(--text-secondary);
+}
+
+/* One receiver: the arrow, their own bubble+name, and — only when a row has more than one
+   receiver and each needs its own figure — the amount at the trailing edge. Indented 10px to
+   sit under the payer's own bubble, same as the app's invisible 10pt spacer. */
+.settle-receiver {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-left: 10px;
+}
+
+.settle-amount { flex: none; font-size: 17px; }
+
+/* Single receiver: payer line, one indented receiver line beneath it, amount vertically centered
+   beside the whole two-line pair — matches `row(_:)`. */
+.settle-row-body { display: flex; align-items: center; gap: 10px; width: 100%; }
+.settle-stack { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
+
+/* Multiple receivers: the payer shown once at top, then every receiver gets its own full row
+   (arrow, name, amount) beneath — matches `card(payerID:transactions:)`. */
+.settle-card-body { display: flex; flex-direction: column; gap: 10px; width: 100%; min-width: 0; }
+.settle-card-header { display: flex; align-items: center; gap: 10px; }
+.settle-card-header .mini-person { flex: 1; }
+.settle-card-list { display: flex; flex-direction: column; gap: 8px; }
+.settle-card-list .settle-receiver { justify-content: space-between; }
 
 .payer + .payer { margin-top: 16px; }
 
@@ -860,25 +930,109 @@ body {
 
     // ---------- render ----------
 
+    /* Bubble+name pair, 35px — reused for both the payer atop a row/card and each receiver
+       within it. Same building block `personLine` is in SettleTransactionsList. */
+    function miniPerson(name, gradient) {
+        var wrap = el('span', 'mini-person');
+        var bubble = el('span', 'mini-bubble', initials(name));
+        bubble.style.backgroundImage = gradient;
+        wrap.appendChild(bubble);
+        wrap.appendChild(el('span', 'mini-name', name));
+        return wrap;
+    }
+
+    /* SF Symbols' `arrow.turn.down.right`, freehand as a path rather than traced from the glyph —
+       close enough at 15px that the exact curve doesn't read, and it avoids shipping a font. */
+    function turnArrow() {
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('class', 'turn-arrow');
+        svg.setAttribute('aria-hidden', 'true');
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M5 4v7a4 4 0 0 0 4 4h9M13 10l5 5-5 5');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', 'currentColor');
+        path.setAttribute('stroke-width', '2.2');
+        path.setAttribute('stroke-linecap', 'round');
+        path.setAttribute('stroke-linejoin', 'round');
+        svg.appendChild(path);
+        return svg;
+    }
+
+    /* One receiver line: the arrow, their own bubble+name (payer's own color/index, so it lines
+       up with how that same payer would render in their own row), and — only when a card lists
+       more than one receiver and each needs its own figure — the amount alongside it. */
+    function receiverLine(payer, payerIndex, cents, showAmount) {
+        var line = el('div', 'settle-receiver');
+        line.appendChild(turnArrow());
+        line.appendChild(miniPerson(payer.name, personBubbleGradient(payer, payerIndex)));
+        if (showAmount) { line.appendChild(moneyEl(cents, 'settle-amount')); }
+        return line;
+    }
+
+    /* `person.to` when the link carries a real breakdown. When it doesn't (an older link) but
+       there's only one payer in scope, who they owe isn't actually ambiguous — they can only be
+       paying that one payer their whole `owes` amount — so that case still gets a real arrow
+       instead of falling back to the receiver-less row below. Genuinely ambiguous only when an
+       older link has more than one payer and no breakdown to say which one(s). */
+    function effectiveDebts(person, data) {
+        if (person.to.length) { return person.to; }
+        if (data.payers.length === 1) { return [{ payerIndex: 0, cents: person.owes }]; }
+        return [];
+    }
+
     function renderPerson(person, index, data, note) {
         var item = el('li', 'person');
 
         var row = el('button', 'person-row');
         row.type = 'button';
+        row.setAttribute('aria-label', person.name + ' owes ' + money(person.owes));
 
-        var bubble = el('span', 'bubble', initials(person.name));
-        bubble.style.backgroundImage = personBubbleGradient(person, index);
-        row.appendChild(bubble);
+        var debts = effectiveDebts(person, data);
 
-        /* ShareView stacks a bold name over a caption-sized "owes"/"is owed" line — same shape
-           here, minus the "is owed" case, since everyone on this page owes the payer. */
-        var text = el('span', 'person-text');
-        text.appendChild(el('span', 'person-name', person.name));
-        text.appendChild(el('span', 'person-status', 'owes'));
-        row.appendChild(text);
+        if (!debts.length) {
+            // No specific receiver to point an arrow at — the plain bubble/name/amount row this
+            // page has always shown.
+            var bubble = el('span', 'bubble', initials(person.name));
+            bubble.style.backgroundImage = personBubbleGradient(person, index);
+            row.appendChild(bubble);
 
-        row.appendChild(moneyEl(person.owes, 'person-money'));
-        row.appendChild(el('span', 'chev'));
+            var text = el('span', 'person-text');
+            text.appendChild(el('span', 'person-name', person.name));
+            text.appendChild(el('span', 'person-status', 'owes'));
+            row.appendChild(text);
+
+            row.appendChild(moneyEl(person.owes, 'person-money'));
+            row.appendChild(el('span', 'chev'));
+        } else if (debts.length === 1) {
+            // Matches `row(_:)`: payer line, one indented arrow+receiver line beneath it, amount
+            // vertically centered beside the pair rather than on the receiver's own line.
+            var body = el('div', 'settle-row-body');
+            var stack = el('div', 'settle-stack');
+            stack.appendChild(miniPerson(person.name, personBubbleGradient(person, index)));
+            stack.appendChild(receiverLine(data.payers[debts[0].payerIndex], debts[0].payerIndex, debts[0].cents, false));
+            body.appendChild(stack);
+            body.appendChild(moneyEl(person.owes, 'settle-amount'));
+            body.appendChild(el('span', 'chev'));
+            row.appendChild(body);
+        } else {
+            // Matches `card(payerID:transactions:)`: payer shown once at top, then every
+            // receiver gets its own full row (arrow, name, amount) beneath it.
+            var cardBody = el('div', 'settle-card-body');
+            var header = el('div', 'settle-card-header');
+            header.appendChild(miniPerson(person.name, personBubbleGradient(person, index)));
+            header.appendChild(el('span', 'chev'));
+            cardBody.appendChild(header);
+
+            var list = el('div', 'settle-card-list');
+            debts.forEach(function (debt) {
+                var payer = data.payers[debt.payerIndex];
+                if (!payer) { return; }
+                list.appendChild(receiverLine(payer, debt.payerIndex, debt.cents, true));
+            });
+            cardBody.appendChild(list);
+            row.appendChild(cardBody);
+        }
 
         row.addEventListener('click', function () {
             openDetail(person, index, data, note);
