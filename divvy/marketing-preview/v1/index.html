@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Divvy — the ___ way to split ___</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+
+/* Palette lifted straight from the Divvy app: Assets.xcassets' mainBackground/cellBackground,
+   the mesh gradient's default fallback trio (blue/mint/coral from [Color].gradientColors), and
+   DivvyGold/DivvyRed/DarkGreen. Deep/pale pairs per accent are new (needed for text-on-light
+   contrast the app itself doesn't have to solve), tuned by eye to sit in the same family. */
+:root {
+    --background: #F1F2F6;
+    --card: #FFFFFF;
+    --text-primary: #1d1d1f;
+    --text-secondary: #6b6b70;
+    --text-tertiary: #9a9aa0;
+    --divider: rgba(0, 0, 0, 0.07);
+    --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    --card-shadow-lift: 0 20px 60px rgba(0, 0, 0, 0.14);
+
+    --mesh-blue: #6C95B7;
+    --mesh-mint: #B9EED2;
+    --mesh-coral: #EF8470;
+    --divvy-gold: #E3B86E;
+    --divvy-green: #0A5B48;
+
+    --radius-card: 25px;
+    --radius-pill: 999px;
+
+    --font-rounded: ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+
+    /* Live-cycled per headline pair — see PAIRS in the script. @property below is what lets these
+       actually transition smoothly instead of snapping between values. */
+    --accent-deep: #3E6E96;
+    --accent-pale: #6C95B7;
+}
+
+@property --accent-deep { syntax: '<color>'; inherits: true; initial-value: #3E6E96; }
+@property --accent-pale { syntax: '<color>'; inherits: true; initial-value: #6C95B7; }
+
+:root {
+    transition: --accent-deep 0.7s cubic-bezier(0.4, 0, 0.2, 1), --accent-pale 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #000000;
+        --card: #1C1C1E;
+        --text-primary: #f5f5f7;
+        --text-secondary: #9a9aa3;
+        --text-tertiary: #6f6f75;
+        --divider: rgba(255, 255, 255, 0.10);
+        --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        --card-shadow-lift: 0 20px 60px rgba(0, 0, 0, 0.6);
+    }
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { background: var(--background); scroll-behavior: smooth; }
+
+body {
+    font-family: var(--font-rounded);
+    background: var(--background);
+    color: var(--text-primary);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
+
+a { color: inherit; }
+
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------------------------------------------------------------- Nav */
+
+.nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 50;
+    height: 68px;
+    display: flex;
+    align-items: center;
+    background: rgba(241, 242, 246, 0.72);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+    .nav {
+        background: rgba(0, 0, 0, 0.6);
+        border-bottom-color: rgba(255, 255, 255, 0.08);
+    }
+}
+
+.nav-inner {
+    width: 100%;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.brand { display: flex; align-items: center; gap: 9px; }
+
+.brand-mark {
+    width: 30px; height: 30px;
+    border-radius: 32%;
+    background: linear-gradient(135deg, var(--mesh-blue) 0%, var(--mesh-coral) 55%, var(--mesh-mint) 100%);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.brand-mark svg { width: 17px; height: 17px; }
+
+.brand-name {
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.nav-cta {
+    display: inline-flex;
+    align-items: center;
+    padding: 9px 18px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--text-primary);
+}
+
+@media (prefers-color-scheme: dark) {
+    .nav-cta {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.12);
+    }
+}
+
+/* ---------------------------------------------------------------- Hero */
+
+.hero {
+    position: relative;
+    padding: 168px 0 120px;
+    overflow: hidden;
+}
+
+/* Ambient mesh, same idea as the settle page's `.mesh` — soft blurred color blobs drifting slowly
+   behind the content, standing in for the app's real MetalMeshGradientBalanced shader. */
+.hero-mesh {
+    position: absolute;
+    top: -160px; left: 0; right: 0;
+    height: 720px;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.8;
+    background:
+        radial-gradient(46% 50% at 20% 30%, var(--mesh-blue) 0%, transparent 60%),
+        radial-gradient(50% 54% at 82% 18%, var(--mesh-coral) 0%, transparent 60%),
+        radial-gradient(58% 60% at 55% 78%, var(--mesh-mint) 0%, transparent 62%);
+    filter: blur(60px);
+    animation: drift 22s ease-in-out infinite alternate;
+}
+
+@media (prefers-color-scheme: dark) {
+    .hero-mesh { opacity: 0.45; }
+}
+
+@keyframes drift {
+    from { transform: translate3d(-2%, -1%, 0) scale(1.02); }
+    to   { transform: translate3d(2%, 2%, 0) scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-mesh, .floater { animation: none !important; }
+}
+
+/* Floating occasion emoji, echoing the portfolio site's own floating-icon hero grid but themed to
+   Divvy's moments instead of app icons. Purely atmospheric — low opacity, blurred, slow. */
+.floaters {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.floater {
+    position: absolute;
+    font-size: 34px;
+    opacity: 0.16;
+    filter: blur(0.4px);
+    animation: floaty 9s ease-in-out infinite;
+}
+
+@media (prefers-color-scheme: dark) { .floater { opacity: 0.14; } }
+
+@keyframes floaty {
+    0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+    50%      { transform: translate3d(0, -22px, 0) rotate(6deg); }
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.01em;
+    margin-bottom: 28px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .hero-badge { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.12); }
+}
+
+.hero-badge-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent-deep);
+    transition: background 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.headline {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.06;
+    font-size: clamp(36px, 6.4vw, 72px);
+}
+
+.headline .line { display: block; }
+
+/* Fixed line-height box that clips the vertical slide; width stays auto so each new word can be a
+   different length without the slide itself distorting. */
+.slot {
+    display: inline-block;
+    position: relative;
+    overflow: hidden;
+    vertical-align: bottom;
+    height: 1.06em;
+    text-align: left;
+}
+
+.slot-text {
+    display: inline-block;
+    white-space: nowrap;
+    will-change: transform, opacity, filter;
+    transition: transform 0.5s cubic-bezier(0.5, 0, 0.15, 1), opacity 0.4s ease, filter 0.4s ease;
+    color: var(--accent-deep);
+    transition-property: transform, opacity, filter, color;
+}
+
+.slot-text.enter-from-bottom { transform: translateY(120%); opacity: 0; filter: blur(6px); }
+.slot-text.enter-from-top    { transform: translateY(-120%); opacity: 0; filter: blur(6px); }
+.slot-text.settled           { transform: translateY(0); opacity: 1; filter: blur(0); }
+
+/* The outgoing word is taken out of flow the instant it starts leaving — otherwise it sits in
+   normal flow next to the incoming word (both are inline-block siblings) rather than stacked on
+   top of it, which doubles the slot's apparent width and throws off centering mid-transition. */
+.slot-text.leaving           { position: absolute; top: 0; left: 0; }
+.slot-text.exit-to-top       { transform: translateY(-120%); opacity: 0; filter: blur(6px); }
+.slot-text.exit-to-bottom    { transform: translateY(120%); opacity: 0; filter: blur(6px); }
+
+.hero-sub {
+    max-width: 520px;
+    margin: 26px auto 0;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-family: var(--font-system);
+}
+
+.hero-actions {
+    margin-top: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 15px 30px;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg, var(--accent-pale), var(--accent-deep));
+    color: #fff;
+    font-weight: 800;
+    font-size: 16px;
+    text-decoration: none;
+    box-shadow: 0 10px 30px -6px var(--accent-deep);
+    transition: background 0.7s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s ease;
+}
+
+.btn-primary:hover { transform: translateY(-2px) scale(1.02); }
+
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    padding: 15px 26px;
+    border-radius: var(--radius-pill);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    color: var(--text-primary);
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    .btn-secondary { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.12); }
+}
+
+.hero-note {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    font-family: var(--font-system);
+}
+
+/* --------------------------------------------------------- Phone mockup */
+
+.phone-stage {
+    position: relative;
+    z-index: 2;
+    margin: 72px auto 0;
+    display: flex;
+    justify-content: center;
+}
+
+.phone {
+    width: 300px;
+    border-radius: 46px;
+    background: #0b0b0d;
+    padding: 12px;
+    box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+}
+
+.phone-screen {
+    position: relative;
+    border-radius: 36px;
+    overflow: hidden;
+    background: var(--card);
+    aspect-ratio: 9 / 19.5;
+}
+
+.phone-mesh {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 45%;
+    opacity: 0.9;
+    background:
+        radial-gradient(60% 70% at 20% 15%, var(--accent-pale) 0%, transparent 62%),
+        radial-gradient(60% 70% at 85% 10%, var(--mesh-coral) 0%, transparent 62%),
+        radial-gradient(70% 75% at 50% 75%, var(--mesh-mint) 0%, transparent 68%);
+    filter: blur(24px);
+    transition: background 0.7s ease;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 40%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 40%, transparent 100%);
+}
+
+.phone-content { position: relative; z-index: 1; padding: 30px 16px 16px; }
+
+.phone-title { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 3px; }
+.phone-subtitle { font-size: 12px; color: var(--text-secondary); font-weight: 600; margin-bottom: 16px; }
+
+.phone-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--card);
+    border-radius: 18px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    margin-bottom: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .phone-row { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4); }
+}
+
+.bubble {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    flex: none;
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(255,255,255,0.92);
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.phone-row-text { flex: 1; min-width: 0; }
+.phone-row-name { font-size: 12.5px; font-weight: 700; }
+.phone-row-status { font-size: 10.5px; color: var(--text-secondary); }
+.phone-row-amt { font-family: var(--font-mono); font-weight: 700; font-size: 13px; }
+
+.phone-pay {
+    margin-top: 10px;
+    display: flex;
+    gap: 6px;
+}
+
+.phone-pay span {
+    flex: 1;
+    text-align: center;
+    padding: 9px 0;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    font-family: var(--font-system);
+}
+
+/* ------------------------------------------------------------- Moments */
+
+.section { padding: 100px 0; position: relative; z-index: 1; }
+
+.section-eyebrow {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 800;
+    color: var(--accent-deep);
+    transition: color 0.7s ease;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.section-title {
+    font-size: clamp(28px, 4.2vw, 44px);
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto 8px;
+}
+
+.section-sub {
+    text-align: center;
+    max-width: 520px;
+    margin: 0 auto 56px;
+    color: var(--text-secondary);
+    font-family: var(--font-system);
+    font-size: 16px;
+}
+
+.moments-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+@media (max-width: 900px) { .moments-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 520px) { .moments-grid { grid-template-columns: 1fr; } }
+
+.moment-card {
+    background: var(--card);
+    border-radius: var(--radius-card);
+    padding: 22px 20px;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.moment-card:hover { transform: translateY(-4px); box-shadow: var(--card-shadow-lift); }
+
+.moment-icon {
+    width: 48px; height: 48px;
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    margin-bottom: 14px;
+}
+
+.moment-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; letter-spacing: -0.005em; }
+.moment-copy { font-size: 13.5px; line-height: 1.5; color: var(--text-secondary); font-family: var(--font-system); }
+
+.moment-people {
+    display: flex;
+    margin-top: 16px;
+}
+
+.moment-people .bubble {
+    width: 26px; height: 26px;
+    font-size: 10px;
+    margin-left: -8px;
+    border: 2px solid var(--card);
+}
+
+.moment-people .bubble:first-child { margin-left: 0; }
+
+/* ------------------------------------------------------------- Showcase */
+
+.showcase {
+    background: var(--card);
+    border-radius: 36px;
+    padding: 64px 40px;
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 48px;
+    align-items: center;
+    box-shadow: var(--card-shadow);
+}
+
+@media (max-width: 860px) {
+    .showcase { grid-template-columns: 1fr; padding: 44px 24px; text-align: center; }
+    .showcase-visual { order: -1; }
+}
+
+.showcase-title { font-size: clamp(26px, 3.6vw, 38px); font-weight: 800; letter-spacing: -0.015em; margin-bottom: 16px; }
+.showcase-copy { font-size: 16px; color: var(--text-secondary); font-family: var(--font-system); margin-bottom: 24px; }
+
+.showcase-list { display: flex; flex-direction: column; gap: 14px; }
+
+.showcase-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-family: var(--font-system);
+}
+
+@media (max-width: 860px) { .showcase-item { text-align: left; } }
+
+.showcase-item-dot {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    flex: none;
+    margin-top: 1px;
+    background: linear-gradient(135deg, var(--accent-pale), var(--accent-deep));
+    transition: background 0.7s ease;
+}
+
+.showcase-item-text b { display: block; font-size: 14.5px; font-weight: 700; }
+.showcase-item-text span { font-size: 13.5px; color: var(--text-secondary); }
+
+.showcase-visual { display: flex; justify-content: center; }
+
+.mini-phone { width: 240px; transform: rotate(-3deg); }
+
+/* ---------------------------------------------------------------- CTA */
+
+.cta-section { text-align: center; padding: 120px 0 100px; }
+
+.cta-title {
+    font-size: clamp(30px, 4.6vw, 52px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+}
+
+.cta-copy {
+    max-width: 460px;
+    margin: 0 auto 32px;
+    color: var(--text-secondary);
+    font-family: var(--font-system);
+    font-size: 16px;
+}
+
+footer {
+    padding: 40px 0 60px;
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--text-tertiary);
+    font-family: var(--font-system);
+}
+
+footer a { text-decoration: underline; }
+
+</style>
+</head>
+<body>
+
+<nav class="nav">
+    <div class="nav-inner">
+        <div class="brand">
+            <div class="brand-mark">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M5 3v6a3 3 0 0 0 3 3h8M13 8l4 4-4 4" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <span class="brand-name">divvy</span>
+        </div>
+        <a class="nav-cta" href="#">Get Divvy</a>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="hero-mesh" aria-hidden="true"></div>
+    <div class="floaters" aria-hidden="true" id="floaters"></div>
+
+    <div class="wrap hero-content">
+        <div class="hero-badge"><span class="hero-badge-dot"></span> Splitting bills, minus the math</div>
+
+        <h1 class="headline">
+            <span class="line">Divvy.</span>
+            <span class="line">The <span class="slot" id="slotAdverb"></span></span>
+            <span class="line">way to split</span>
+            <span class="line"><span class="slot" id="slotOccasion"></span>.</span>
+        </h1>
+
+        <p class="hero-sub">You planned the trip. You picked the restaurant. Let the app handle the part nobody actually wants to do.</p>
+
+        <div class="hero-actions">
+            <a class="btn-primary" href="#">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M17.05 12.9c.02-2.1 1.72-3.1 1.8-3.15-.98-1.44-2.5-1.64-3.04-1.66-1.3-.13-2.53.76-3.19.76-.66 0-1.68-.74-2.76-.72-1.42.02-2.73.83-3.46 2.1-1.48 2.56-.38 6.35 1.06 8.43.7 1.02 1.54 2.16 2.64 2.12 1.06-.04 1.46-.68 2.74-.68 1.27 0 1.64.68 2.76.66 1.14-.02 1.86-1.03 2.56-2.06.8-1.18 1.13-2.32 1.15-2.38-.03-.01-2.2-.85-2.22-3.38z" fill="#fff"/><path d="M15.02 6.44c.58-.7.98-1.68.87-2.66-.84.03-1.86.56-2.46 1.26-.54.62-1.02 1.62-.89 2.57.93.07 1.88-.47 2.48-1.17z" fill="#fff"/></svg>
+                Get Divvy
+            </a>
+            <a class="btn-secondary" href="#">See how it works</a>
+        </div>
+        <div class="hero-note">Coming soon on iOS · No sign-up to preview a split</div>
+    </div>
+
+    <div class="phone-stage">
+        <div class="phone">
+            <div class="phone-screen">
+                <div class="phone-mesh" id="phoneMesh" aria-hidden="true"></div>
+                <div class="phone-content">
+                    <div class="phone-title" id="phoneTitle">Ski trip 🎿</div>
+                    <div class="phone-subtitle">4 people · $612 total</div>
+
+                    <div class="phone-row">
+                        <div class="bubble" style="background: linear-gradient(135deg, #8CB7DA, #4D7FA6);">JM</div>
+                        <div class="phone-row-text"><div class="phone-row-name">Jordan</div><div class="phone-row-status">owes you</div></div>
+                        <div class="phone-row-amt">$153</div>
+                    </div>
+                    <div class="phone-row">
+                        <div class="bubble" style="background: linear-gradient(135deg, #F0A98F, #D96A4E);">AK</div>
+                        <div class="phone-row-text"><div class="phone-row-name">Ana</div><div class="phone-row-status">owes you</div></div>
+                        <div class="phone-row-amt">$153</div>
+                    </div>
+                    <div class="phone-row">
+                        <div class="bubble" style="background: linear-gradient(135deg, #C9F0DA, #6FCB9B);">RS</div>
+                        <div class="phone-row-text"><div class="phone-row-name">Rae</div><div class="phone-row-status">settled up</div></div>
+                        <div class="phone-row-amt">✓</div>
+                    </div>
+
+                    <div class="phone-pay">
+                        <span style="background:#008CFF;">Venmo</span>
+                        <span style="background:#00C244;">Cash App</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="wrap">
+        <div class="section-eyebrow">Every trip has one</div>
+        <h2 class="section-title">The moment right after the fun part</h2>
+        <p class="section-sub">Someone has to figure out who owes what. Divvy just makes sure it takes ten seconds instead of a group chat that goes quiet for three days.</p>
+
+        <div class="moments-grid" id="momentsGrid"></div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="wrap">
+        <div class="showcase">
+            <div class="showcase-copy-col">
+                <div class="section-eyebrow" style="text-align:left;">No group chat archaeology</div>
+                <h3 class="showcase-title">Nobody has to be the one who does the math</h3>
+                <p class="showcase-copy">You know the person. Every group has one — the one who pulls out a calculator, screenshots the receipt, and sends "ok so everyone owes $23.47." Divvy just is that person, quietly, in the background.</p>
+
+                <div class="showcase-list">
+                    <div class="showcase-item">
+                        <div class="showcase-item-dot"></div>
+                        <div class="showcase-item-text"><b>Snap the receipt</b><span>Divvy reads it and splits it before you've put your phone away.</span></div>
+                    </div>
+                    <div class="showcase-item">
+                        <div class="showcase-item-dot"></div>
+                        <div class="showcase-item-text"><b>Everyone sees their share</b><span>No spreadsheet, no "wait who paid for parking."</span></div>
+                    </div>
+                    <div class="showcase-item">
+                        <div class="showcase-item-dot"></div>
+                        <div class="showcase-item-text"><b>Pay in one tap</b><span>Venmo, Cash App, or Apple Cash — whatever's already on their phone.</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="showcase-visual">
+                <div class="phone mini-phone">
+                    <div class="phone-screen">
+                        <div class="phone-mesh" style="background: radial-gradient(60% 70% at 20% 15%, var(--mesh-mint) 0%, transparent 62%), radial-gradient(60% 70% at 85% 10%, var(--divvy-gold) 0%, transparent 62%), radial-gradient(70% 75% at 50% 75%, var(--mesh-coral) 0%, transparent 68%); filter: blur(24px);"></div>
+                        <div class="phone-content">
+                            <div class="phone-title">Beach house 🏖️</div>
+                            <div class="phone-subtitle">3 people · $890 total</div>
+                            <div class="phone-row">
+                                <div class="bubble" style="background: linear-gradient(135deg, #F3CE93, #D9A64E);">TL</div>
+                                <div class="phone-row-text"><div class="phone-row-name">Toni</div><div class="phone-row-status">owes you</div></div>
+                                <div class="phone-row-amt">$296</div>
+                            </div>
+                            <div class="phone-row">
+                                <div class="bubble" style="background: linear-gradient(135deg, #F0A98F, #D96A4E);">DB</div>
+                                <div class="phone-row-text"><div class="phone-row-name">Deb</div><div class="phone-row-status">owes you</div></div>
+                                <div class="phone-row-amt">$296</div>
+                            </div>
+                            <div class="phone-pay">
+                                <span style="background:#008CFF;">Venmo</span>
+                                <span style="background:#1d1d1f;">Apple Cash</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section wrap">
+    <div class="section-eyebrow">Ready when you are</div>
+    <h2 class="cta-title">Go plan something fun.<br>We've got the boring part.</h2>
+    <p class="cta-copy">Divvy is coming to iOS. Be the friend who actually gets paid back.</p>
+    <a class="btn-primary" href="#" style="padding: 17px 34px; font-size: 17px;">Get Divvy</a>
+</section>
+
+<footer>
+    A rough preview by <a href="https://mgcf1.com">Milo Cassarino</a> — not a real product page yet.
+</footer>
+
+<script>
+(function () {
+    'use strict';
+
+    /* Each pair is the whole pitch in one line: a feeling (adverb) matched to a moment
+       (occasion). Both words in the headline share one accent color per pair — that's the visual
+       cue that they're a matched set, not two independently-random words. deep = text/glow color
+       on the light background, pale = the lighter end of the same gradient (mesh blob, button). */
+    var PAIRS = [
+        { adverb: 'fastest',        occasion: 'the Uber ride',        deep: '#3E6E96', pale: '#8CB7DA' },
+        { adverb: 'easiest',        occasion: 'the ski trip',         deep: '#A97B2E', pale: '#F3CE93' },
+        { adverb: 'least awkward',  occasion: 'the group dinner',     deep: '#C85C41', pale: '#F0A98F' },
+        { adverb: 'chillest',       occasion: 'the beach house',      deep: '#2E8F6E', pale: '#B9EED2' },
+        { adverb: 'smoothest',      occasion: 'the road trip',        deep: '#1F4D3D', pale: '#7FC7A6' },
+        { adverb: 'breeziest',      occasion: 'the camping trip',     deep: '#4C7FA6', pale: '#9DC3DE' },
+        { adverb: 'drama-free',     occasion: 'the Airbnb',           deep: '#8A6A2A', pale: '#D9BD84' },
+        { adverb: 'funnest',        occasion: 'game night',           deep: '#B85248', pale: '#EF8470' }
+    ];
+
+    var CYCLE_MS = 3200;
+    var STAGGER_MS = 140; // occasion follows the adverb by a beat, like the vibe unlocks the moment
+
+    var slotAdverb = document.getElementById('slotAdverb');
+    var slotOccasion = document.getElementById('slotOccasion');
+    var root = document.documentElement.style;
+
+    function makeTextEl(text, startClass) {
+        var span = document.createElement('span');
+        span.className = 'slot-text ' + startClass;
+        span.textContent = text;
+        return span;
+    }
+
+    /* Odometer-style roll: the outgoing word slides out one direction while the incoming word
+       slides in from the other, so it always reads as forward motion rather than a random swap. */
+    function rollSlot(slotEl, text, direction) {
+        var outClass = direction === 'down' ? 'exit-to-top' : 'exit-to-bottom';
+        var inStart = direction === 'down' ? 'enter-from-bottom' : 'enter-from-top';
+
+        /* A backgrounded tab throttles/coalesces timers, so a setTimeout-based cleanup can land
+           late (or get skipped) relative to the next tick — leaving a stale "leaving" node behind
+           indefinitely instead of for its intended 520ms. Sweeping any leftovers before starting
+           a new roll makes each cycle self-healing regardless of how the previous one's timing
+           actually played out. */
+        Array.prototype.forEach.call(slotEl.querySelectorAll('.slot-text.leaving'), function (stale) {
+            stale.remove();
+        });
+
+        var current = slotEl.querySelector('.slot-text.settled');
+        var next = makeTextEl(text, inStart);
+        slotEl.appendChild(next);
+
+        // Force layout so the browser registers the start position before animating to settled.
+        void next.offsetWidth;
+
+        if (current) {
+            current.classList.remove('settled');
+            current.classList.add('leaving', outClass);
+            /* transitionend, not a timer — ties removal to the animation actually finishing
+               rather than a guessed duration that throttling can desync from. */
+            current.addEventListener('transitionend', function onDone(e) {
+                if (e.propertyName !== 'transform') { return; }
+                current.removeEventListener('transitionend', onDone);
+                if (current.parentNode) { current.parentNode.removeChild(current); }
+            });
+        }
+        next.classList.remove(inStart);
+        next.classList.add('settled');
+    }
+
+    function applyAccent(pair) {
+        root.setProperty('--accent-deep', pair.deep);
+        root.setProperty('--accent-pale', pair.pale);
+    }
+
+    var index = 0;
+
+    function show(i, direction) {
+        var pair = PAIRS[i];
+        rollSlot(slotAdverb, pair.adverb, direction);
+        window.setTimeout(function () {
+            rollSlot(slotOccasion, pair.occasion, direction);
+        }, STAGGER_MS);
+        applyAccent(pair);
+    }
+
+    // First paint: no animation, just settled text.
+    (function initial() {
+        var pair = PAIRS[0];
+        var a = makeTextEl(pair.adverb, 'settled');
+        var o = makeTextEl(pair.occasion, 'settled');
+        slotAdverb.appendChild(a);
+        slotOccasion.appendChild(o);
+        applyAccent(pair);
+    })();
+
+    window.setInterval(function () {
+        index = (index + 1) % PAIRS.length;
+        show(index, 'down');
+    }, CYCLE_MS);
+
+    /* Background floating occasion emoji — atmospheric only, positions randomized once on load. */
+    var EMOJI = ['🎿', '🍕', '🚗', '🏖️', '🎬', '🏕️', '🎉', '🚕', '🧾', '🍣'];
+    var floatersEl = document.getElementById('floaters');
+    EMOJI.forEach(function (glyph, i) {
+        var el = document.createElement('div');
+        el.className = 'floater';
+        el.textContent = glyph;
+        el.style.left = (6 + (i * 9.5) % 92) + '%';
+        el.style.top = (8 + ((i * 37) % 80)) + '%';
+        el.style.animationDelay = (i * 0.6) + 's';
+        el.style.animationDuration = (7 + (i % 4) * 1.6) + 's';
+        floatersEl.appendChild(el);
+    });
+
+    /* Phone mockup mesh + title follow the same accent/pair rotation as the headline, so the
+       product visual reads as reacting to the copy rather than sitting there independently. */
+    var phoneMesh = document.getElementById('phoneMesh');
+    var phoneTitle = document.getElementById('phoneTitle');
+    var PHONE_SCENES = [
+        { title: 'The Uber 🚕', people: '3 people · $34 total' },
+        { title: 'Ski trip 🎿', people: '4 people · $612 total' },
+        { title: 'Group dinner 🍝', people: '5 people · $164 total' },
+        { title: 'Beach house 🏖️', people: '3 people · $890 total' },
+        { title: 'Road trip 🚗', people: '4 people · $211 total' },
+        { title: 'Camping 🏕️', people: '4 people · $138 total' },
+        { title: 'The Airbnb 🧳', people: '6 people · $1,420 total' },
+        { title: 'Game night 🎉', people: '4 people · $58 total' }
+    ];
+
+    var origSubtitle = document.querySelector('.phone-subtitle');
+
+    setInterval(function () {
+        var scene = PHONE_SCENES[index];
+        phoneTitle.style.opacity = 0;
+        if (origSubtitle) { origSubtitle.style.opacity = 0; }
+        window.setTimeout(function () {
+            phoneTitle.textContent = scene.title;
+            if (origSubtitle) { origSubtitle.textContent = scene.people; }
+            phoneTitle.style.transition = 'opacity 0.3s ease';
+            phoneTitle.style.opacity = 1;
+            if (origSubtitle) {
+                origSubtitle.style.transition = 'opacity 0.3s ease';
+                origSubtitle.style.opacity = 1;
+            }
+        }, 260);
+    }, CYCLE_MS);
+
+    /* ---------------------------------------------------------------- Moments grid */
+
+    var MOMENTS = [
+        { emoji: '🎿', bg: 'linear-gradient(135deg, #8CB7DA, #4D7FA6)', title: 'Ski trip', copy: 'Lift tickets, the lodge, one Costco run for snacks — sorted before you’re back on the chairlift.', people: ['JM', 'AK', 'RS'] },
+        { emoji: '🍝', bg: 'linear-gradient(135deg, #F0A98F, #D96A4E)', title: 'Group dinner', copy: 'The check drops, Divvy splits it, you’re already arguing about dessert.', people: ['TL', 'DB'] },
+        { emoji: '🚗', bg: 'linear-gradient(135deg, #B7CBE0, #6E93B8)', title: 'Road trip', copy: 'Gas, tolls, that one gas station burrito everyone regrets — divvied up by the next exit.', people: ['MP', 'SK', 'LR'] },
+        { emoji: '🏖️', bg: 'linear-gradient(135deg, #F3CE93, #D9A64E)', title: 'Beach house', copy: 'Split the rental before anyone tries to claim the good room.', people: ['TL', 'DB', 'AK'] },
+        { emoji: '🎬', bg: 'linear-gradient(135deg, #C9A9DA, #8E6EAB)', title: 'Movie night', copy: 'Tickets, popcorn, the Uber home — settled before the credits roll.', people: ['JM', 'RS'] },
+        { emoji: '🏕️', bg: 'linear-gradient(135deg, #C9F0DA, #6FCB9B)', title: 'Camping', copy: 'Firewood, permits, someone’s questionable tent — evened out by the campfire.', people: ['SK', 'MP'] },
+        { emoji: '🎉', bg: 'linear-gradient(135deg, #F0A0AE, #C2445C)', title: 'Game night', copy: 'Pizza and the drinks run, sorted before round two starts.', people: ['DB', 'JM', 'TL'] },
+        { emoji: '🚕', bg: 'linear-gradient(135deg, #9DC3DE, #4C7FA6)', title: 'The Uber', copy: 'Whoever’s phone has the app pays — everyone else pays them back, instantly.', people: ['AK', 'RS'] }
+    ];
+
+    var grid = document.getElementById('momentsGrid');
+    MOMENTS.forEach(function (m) {
+        var card = document.createElement('div');
+        card.className = 'moment-card';
+
+        var icon = document.createElement('div');
+        icon.className = 'moment-icon';
+        icon.style.background = m.bg;
+        icon.textContent = m.emoji;
+        card.appendChild(icon);
+
+        var title = document.createElement('div');
+        title.className = 'moment-title';
+        title.textContent = m.title;
+        card.appendChild(title);
+
+        var copy = document.createElement('div');
+        copy.className = 'moment-copy';
+        copy.textContent = m.copy;
+        card.appendChild(copy);
+
+        var people = document.createElement('div');
+        people.className = 'moment-people';
+        m.people.forEach(function (initials, i) {
+            var b = document.createElement('div');
+            b.className = 'bubble';
+            b.textContent = initials;
+            var hue = ['#8CB7DA,#4D7FA6', '#F0A98F,#D96A4E', '#C9F0DA,#6FCB9B'][i % 3].split(',');
+            b.style.background = 'linear-gradient(135deg,' + hue[0] + ',' + hue[1] + ')';
+            people.appendChild(b);
+        });
+        card.appendChild(people);
+
+        grid.appendChild(card);
+    });
+})();
+</script>
+
+</body>
+</html>
