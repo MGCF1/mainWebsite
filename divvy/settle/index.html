@@ -300,7 +300,17 @@ body {
     align-items: center;
     gap: 6px;
     padding-left: 10px;
+    width: 100%;
+    min-width: 0;
 }
+
+/* Bubble+name gets the same flex:1 the header row already gives its own .mini-person (line below)
+   — without it, the row's 3 children (arrow, mini-person, amount) each just take their own content
+   width, so with a receiver-list row's old `justify-content: space-between` (removed below) the
+   only free space to distribute sat BETWEEN them as three evenly-spaced gaps instead of being
+   absorbed by the name — leaving the amount stranded mid-row instead of flush against the trailing
+   edge, and the row visibly short of the card's full width. */
+.settle-receiver .mini-person { flex: 1; }
 
 .settle-amount { flex: none; font-size: 17px; }
 
@@ -315,7 +325,6 @@ body {
 .settle-card-header { display: flex; align-items: center; gap: 10px; }
 .settle-card-header .mini-person { flex: 1; }
 .settle-card-list { display: flex; flex-direction: column; gap: 8px; }
-.settle-card-list .settle-receiver { justify-content: space-between; }
 
 .payer + .payer { margin-top: 16px; }
 
